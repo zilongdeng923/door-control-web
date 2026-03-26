@@ -1,14 +1,150 @@
 <!DOCTYPE html>
-<html>
-<body style="text-align:center;font-family:sans-serif;">
-  <h2>Door Control</h2>
-  <button onclick="openDoor()" style="font-size:30px;padding:20px;">
-    OPEN DOOR
-  </button>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Door Control</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --error: #dc2626;
+      --border: #e5e7eb;
+    }
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 100%);
+      font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .sub {
+      margin: 0 0 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .status {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #f9fafb;
+      min-height: 48px;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .ok { color: var(--success); }
+    .err { color: var(--error); }
+    .muted { color: var(--muted); }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Door Control</h1>
+    <p class="sub">使用 Google 登录后发送开门指令。</p>
+
+    <section id="loginSection">
+      <div class="row">
+        <button id="loginBtn" class="primary">使用 Google 登录</button>
+      </div>
+    </section>
+
+    <section id="appSection" class="hidden">
+      <div id="userInfo" class="status muted"></div>
+      <div class="row">
+        <button id="openBtn" class="primary">OPEN DOOR</button>
+      </div>
+      <div class="row">
+        <button id="logoutBtn" class="danger">退出登录</button>
+      </div>
+    </section>
+
+    <div id="statusBox" class="status muted">Ready</div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -19,17 +155,105 @@ const firebaseConfig = {
   appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
 
-window.openDoor = function() {
-  const pwd = prompt("Enter password:");
-  if (pwd !== "1234") return;
+    const loginSection = document.getElementById("loginSection");
+    const appSection = document.getElementById("appSection");
+    const loginBtn = document.getElementById("loginBtn");
+    const openBtn = document.getElementById("openBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const statusBox = document.getElementById("statusBox");
+    const userInfo = document.getElementById("userInfo");
 
-  set(ref(db, "open"), true)
-    .then(() => alert("Command sent"))
-    .catch(() => alert("Failed"));
-};
-</script>
+    let busy = false;
+
+    function setStatus(text, cls = "muted") {
+      statusBox.className = `status ${cls}`;
+      statusBox.textContent = text;
+    }
+
+    function setLoggedOutUI() {
+      loginSection.classList.remove("hidden");
+      appSection.classList.add("hidden");
+      userInfo.textContent = "";
+    }
+
+    function setLoggedInUI(user) {
+      loginSection.classList.add("hidden");
+      appSection.classList.remove("hidden");
+      userInfo.textContent = `已登录：${user.email || ""}`;
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      try {
+        setStatus("正在打开 Google 登录…", "muted");
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        console.error(err);
+        setStatus("登录失败。请检查授权域名和 Firebase 配置。", "err");
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        setStatus("已退出登录。", "muted");
+      } catch (err) {
+        console.error(err);
+        setStatus("退出失败。", "err");
+      }
+    });
+
+    openBtn.addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        setStatus("你还没有登录。", "err");
+        return;
+      }
+      if (busy) return;
+
+      busy = true;
+      openBtn.disabled = true;
+      setStatus("正在发送指令…", "muted");
+
+      try {
+        const openRef = ref(db, "commands/open");
+        const snapshot = await get(openRef);
+        const current = snapshot.val();
+
+        if (current && current.pending === true) {
+          setStatus("设备还在处理上一条指令。", "err");
+        } else {
+          await set(openRef, {
+            pending: true,
+            requestedAt: Date.now(),
+            requestedBy: user.uid
+          });
+          setStatus("指令已发送。", "ok");
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus("发送失败。请检查数据库规则与登录状态。", "err");
+      } finally {
+        setTimeout(() => {
+          busy = false;
+          openBtn.disabled = false;
+        }, 1200);
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setLoggedInUI(user);
+        setStatus("已登录，可以发送指令。", "ok");
+      } else {
+        setLoggedOutUI();
+        setStatus("请先登录。", "muted");
+      }
+    });
+  </script>
 </body>
 </html>
