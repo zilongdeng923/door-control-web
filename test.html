@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body style="text-align:center;font-family:sans-serif;">
+  <h2>Door Control</h2>
+  <button onclick="openDoor()" style="font-size:30px;padding:20px;">
+    OPEN DOOR
+  </button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+  authDomain: "door-control-1fb5a.firebaseapp.com",
+  projectId: "door-control-1fb5a",
+  storageBucket: "door-control-1fb5a.firebasestorage.app",
+  messagingSenderId: "594532135937",
+  appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.openDoor = function() {
+  const pwd = prompt("Enter password:");
+  if (pwd !== "1234") return;
+
+  set(ref(db, "open"), true)
+    .then(() => alert("Command sent"))
+    .catch(() => alert("Failed"));
+};
+</script>
+</body>
+</html>
