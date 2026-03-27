@@ -34,10 +34,7 @@
       min-height: 100%;
       font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(96, 165, 250, 0.22), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.20), transparent 26%),
-        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      background: #0f172a;
     }
 
     body {
@@ -47,43 +44,70 @@
       justify-content: center;
       padding: 24px;
       overflow-x: hidden;
+      position: relative;
     }
 
-    .bg-orb {
+    /* 背景图 + 深色遮罩 */
+    body::before {
+      content: "";
       position: fixed;
-      border-radius: 999px;
-      filter: blur(70px);
-      opacity: 0.45;
-      pointer-events: none;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(7, 12, 26, 0.66) 0%, rgba(10, 16, 34, 0.74) 100%),
+        radial-gradient(circle at center, rgba(96, 165, 250, 0.10) 0%, rgba(15, 23, 42, 0.00) 42%),
+        url("./assets/bg-door.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
       z-index: 0;
     }
 
-    .orb-1 {
-      width: 220px;
-      height: 220px;
-      background: #2563eb;
-      top: -40px;
-      left: -50px;
+    /* 动效1：背景呼吸光 */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(
+          circle at center,
+          rgba(255,255,255,0.08) 0%,
+          rgba(255,255,255,0.00) 45%
+        );
+      pointer-events: none;
+      z-index: 0;
+      animation: glowBreath 4s ease-in-out infinite;
     }
 
-    .orb-2 {
-      width: 260px;
-      height: 260px;
-      background: #0ea5e9;
-      bottom: -70px;
-      right: -70px;
+    @keyframes glowBreath {
+      0%, 100% {
+        opacity: 0.58;
+      }
+      50% {
+        opacity: 1;
+      }
     }
 
+    /* 动效2：面板轻微浮动 */
     .app {
       position: relative;
       z-index: 1;
       width: 100%;
       max-width: 430px;
+      animation: floatPanel 6s ease-in-out infinite;
+    }
+
+    @keyframes floatPanel {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-6px);
+      }
     }
 
     .panel {
-      background: var(--card);
-      border: 1px solid var(--card-border);
+      background: rgba(10, 16, 34, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.10);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       border-radius: var(--radius-xl);
@@ -93,8 +117,7 @@
 
     .hero {
       padding: 28px 24px 18px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
@@ -103,6 +126,8 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 18px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .chip {
@@ -113,8 +138,8 @@
       border-radius: 999px;
       font-size: 12px;
       color: var(--muted);
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
     }
 
     .chip-dot {
@@ -155,8 +180,8 @@
     }
 
     .card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.045);
+      border: 1px solid rgba(255,255,255,0.07);
       border-radius: var(--radius-lg);
       padding: 16px;
     }
@@ -227,14 +252,14 @@
       box-shadow: 0 16px 34px rgba(37, 99, 235, 0.42);
     }
 
+    /* 动效3：OPEN按钮持续扫光 */
     .btn-open {
       position: relative;
       padding: 22px 20px;
       font-size: 24px;
       letter-spacing: 0.02em;
       color: white;
-      background:
-        linear-gradient(135deg, #1d4ed8, #3b82f6 45%, #60a5fa);
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6 45%, #60a5fa);
       box-shadow: 0 18px 38px rgba(59, 130, 246, 0.30);
       overflow: hidden;
     }
@@ -243,20 +268,30 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(120deg, transparent 10%, rgba(255,255,255,0.18) 35%, transparent 60%);
-      transform: translateX(-120%);
-      transition: transform 0.8s ease;
+      background: linear-gradient(
+        120deg,
+        transparent 20%,
+        rgba(255,255,255,0.22) 45%,
+        transparent 70%
+      );
+      transform: translateX(-150%);
+      animation: sweep 3.6s linear infinite;
     }
 
-    .btn-open:hover::before {
-      transform: translateX(120%);
+    @keyframes sweep {
+      0% {
+        transform: translateX(-150%);
+      }
+      100% {
+        transform: translateX(150%);
+      }
     }
 
     .btn-open-sub {
       margin-top: 8px;
       font-size: 12px;
       font-weight: 500;
-      opacity: 0.9;
+      opacity: 0.92;
     }
 
     .btn-logout {
@@ -323,12 +358,31 @@
     .hidden {
       display: none;
     }
+
+    @media (max-width: 480px) {
+      .brand-title {
+        font-size: 34px;
+      }
+
+      .brand-subtitle {
+        font-size: 14px;
+      }
+
+      .btn-open {
+        font-size: 21px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body::after,
+      .app,
+      .btn-open::before {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="bg-orb orb-1"></div>
-  <div class="bg-orb orb-2"></div>
-
   <main class="app">
     <section class="panel">
       <div class="hero">
@@ -407,6 +461,7 @@
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
       authDomain: "door-control-1fb5a.firebaseapp.com",
+      databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
       projectId: "door-control-1fb5a",
       storageBucket: "door-control-1fb5a.firebasestorage.app",
       messagingSenderId: "594532135937",
