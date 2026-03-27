@@ -79,18 +79,46 @@
       content: "";
       position: fixed;
       inset: 0;
-      background:
-        radial-gradient(circle at center,
-          rgba(255,255,255,0.06) 0%,
-          rgba(255,255,255,0.00) 42%);
-      z-index: 0;
       pointer-events: none;
-      animation: glowBreath 4.6s ease-in-out infinite;
+      z-index: 0;
+      background:
+        /* 门周围的大范围柔光 */
+        radial-gradient(
+          ellipse at 50% 58%,
+          rgba(170, 210, 255, 0.20) 0%,
+          rgba(120, 180, 255, 0.12) 18%,
+          rgba(80, 140, 255, 0.06) 34%,
+          rgba(255, 255, 255, 0.00) 56%
+        ),
+    
+        /* 门底部更亮的核心光晕 */
+        radial-gradient(
+          ellipse at 50% 64%,
+          rgba(255, 255, 255, 0.22) 0%,
+          rgba(190, 220, 255, 0.14) 16%,
+          rgba(120, 180, 255, 0.06) 28%,
+          rgba(255, 255, 255, 0.00) 42%
+        ),
+    
+        /* 整体呼吸光 */
+        radial-gradient(
+          circle at center,
+          rgba(255,255,255,0.05) 0%,
+          rgba(255,255,255,0.00) 42%
+        );
+    
+      animation: doorBloom 4.8s ease-in-out infinite;
     }
 
-    @keyframes glowBreath {
-      0%, 100% { opacity: 0.62; }
-      50% { opacity: 1; }
+    @keyframes doorBloom {
+      0%, 100% {
+        opacity: 0.72;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.02);
+      }
     }
 
     .app {
