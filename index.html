@@ -22,6 +22,12 @@
       --btn-blue-2: rgba(59, 130, 246, 0.94);
       --btn-blue-3: rgba(120, 184, 255, 0.92);
 
+      --btn-soft-1: rgba(255,255,255,0.10);
+      --btn-soft-2: rgba(255,255,255,0.05);
+
+      --btn-danger-1: rgba(239, 68, 68, 0.92);
+      --btn-danger-2: rgba(248, 113, 113, 0.92);
+
       --radius-xl: 30px;
       --radius-lg: 22px;
       --radius-md: 18px;
@@ -50,7 +56,6 @@
       overflow-x: hidden;
     }
 
-    /* 背景主图 + 空间层次 */
     body::before {
       content: "";
       position: fixed;
@@ -74,7 +79,6 @@
       z-index: 0;
     }
 
-    /* 呼吸光 */
     body::after {
       content: "";
       position: fixed;
@@ -82,7 +86,6 @@
       pointer-events: none;
       z-index: 0;
       background:
-        /* 门周围的大范围柔光 */
         radial-gradient(
           ellipse at 50% 58%,
           rgba(170, 210, 255, 0.20) 0%,
@@ -90,8 +93,6 @@
           rgba(80, 140, 255, 0.06) 34%,
           rgba(255, 255, 255, 0.00) 56%
         ),
-    
-        /* 门底部更亮的核心光晕 */
         radial-gradient(
           ellipse at 50% 64%,
           rgba(255, 255, 255, 0.22) 0%,
@@ -99,14 +100,11 @@
           rgba(120, 180, 255, 0.06) 28%,
           rgba(255, 255, 255, 0.00) 42%
         ),
-    
-        /* 整体呼吸光 */
         radial-gradient(
           circle at center,
           rgba(255,255,255,0.05) 0%,
           rgba(255,255,255,0.00) 42%
         );
-    
       animation: doorBloom 4.8s ease-in-out infinite;
     }
 
@@ -137,7 +135,6 @@
       50% { transform: translateY(-6px); }
     }
 
-    /* 顶部区域：轻、靠上、不给门添堵 */
     .top-overlay {
       padding-top: 6px;
     }
@@ -195,20 +192,20 @@
       text-shadow: 0 1px 10px rgba(0,0,0,0.22);
     }
 
-    /* 中间纯留白，让门自己发光 */
     .door-space {
       flex: 1;
       min-height: 250px;
     }
 
-    /* 下方控制区 */
     .control-stack {
       padding-bottom: 8px;
     }
 
     .login-panel,
     .account-panel,
-    .status-panel {
+    .status-panel,
+    .button-panel,
+    .toggle-panel {
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       backdrop-filter: blur(20px);
@@ -240,8 +237,7 @@
       border-radius: 50%;
       display: grid;
       place-items: center;
-      background:
-        linear-gradient(135deg, #2563eb, #60a5fa);
+      background: linear-gradient(135deg, #2563eb, #60a5fa);
       color: white;
       font-size: 18px;
       font-weight: 800;
@@ -274,7 +270,7 @@
       width: 100%;
       border: none;
       cursor: pointer;
-      transition: transform 0.16s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.16s ease, opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
       user-select: none;
     }
 
@@ -285,6 +281,7 @@
     .btn:disabled {
       opacity: 0.64;
       cursor: not-allowed;
+      filter: saturate(0.7);
     }
 
     .btn-login {
@@ -293,19 +290,28 @@
       font-size: 18px;
       font-weight: 700;
       color: white;
-      background:
-        linear-gradient(135deg, rgba(37,99,235,0.96), rgba(96,165,250,0.94));
+      background: linear-gradient(135deg, rgba(37,99,235,0.96), rgba(96,165,250,0.94));
       box-shadow:
         0 14px 32px rgba(37,99,235,0.32),
         inset 0 1px 0 rgba(255,255,255,0.20);
     }
 
-    /* 高级按钮核心 */
+    .button-panel {
+      padding: 14px;
+    }
+
+    .primary-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
     .btn-open {
       position: relative;
       overflow: hidden;
       border-radius: 26px;
       padding: 24px 18px;
+      flex: 1;
       background:
         linear-gradient(180deg,
           rgba(255,255,255,0.18) 0%,
@@ -324,23 +330,20 @@
         0 0 36px rgba(96,165,250,0.22);
     }
 
-    /* 按钮表面扫光 */
     .btn-open::before {
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(
-          120deg,
-          transparent 18%,
-          rgba(255,255,255,0.24) 42%,
-          transparent 68%
-        );
+      background: linear-gradient(
+        120deg,
+        transparent 18%,
+        rgba(255,255,255,0.24) 42%,
+        transparent 68%
+      );
       transform: translateX(-150%);
       animation: sweep 3.9s linear infinite;
     }
 
-    /* 按钮顶部高光 */
     .btn-open::after {
       content: "";
       position: absolute;
@@ -381,6 +384,138 @@
       font-weight: 500;
       color: rgba(255,255,255,0.82);
       letter-spacing: 0.02em;
+    }
+
+    .toggle-panel {
+      width: 122px;
+      padding: 12px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
+        rgba(9, 15, 30, 0.44);
+    }
+
+    .toggle-label {
+      font-size: 12px;
+      color: var(--muted-2);
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .toggle-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.62);
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .switch-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .switch {
+      position: relative;
+      width: 66px;
+      height: 38px;
+      display: inline-block;
+    }
+
+    .switch input {
+      display: none;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.24);
+      transition: 0.25s ease;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      left: 4px;
+      top: 4px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(219,231,255,0.96));
+      box-shadow:
+        0 6px 16px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+      transition: 0.25s ease;
+    }
+
+    .switch input:checked + .slider {
+      background: linear-gradient(135deg, rgba(37,99,235,0.92), rgba(96,165,250,0.92));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        0 0 18px rgba(96,165,250,0.18);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(28px);
+    }
+
+    .secondary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .btn-secondary {
+      padding: 18px 16px;
+      border-radius: 22px;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
+        rgba(12, 20, 40, 0.46);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.10),
+        0 10px 28px rgba(0,0,0,0.20);
+    }
+
+    .btn-secondary .sub {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    .btn-hangup {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
+        linear-gradient(135deg, var(--btn-danger-1), var(--btn-danger-2));
+      color: #fff8f8;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        0 10px 30px rgba(239,68,68,0.26);
+    }
+
+    .btn-debug {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #dbeafe;
+      background: rgba(37,99,235,0.10);
+      border: 1px solid rgba(96,165,250,0.20);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
     }
 
     .status-panel {
@@ -460,6 +595,27 @@
       .btn-open-title {
         font-size: 23px;
       }
+
+      .primary-row {
+        flex-direction: column;
+      }
+
+      .toggle-panel {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .toggle-panel .toggle-copy {
+        flex: 1;
+        text-align: left;
+      }
+
+      .toggle-label,
+      .toggle-sub {
+        text-align: left;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -485,8 +641,8 @@
       <div class="hero-text">
         <h1 class="brand-title">Door Control</h1>
         <p class="brand-subtitle">
-          使用 Google 登录后发送开门指令。<br />
-          指令会经由 Firebase 安全下发到设备。
+          使用 Google 登录后发送门禁指令。<br />
+          支持接电话、单独开门与一键开门。
         </p>
       </div>
     </section>
@@ -507,12 +663,41 @@
           </div>
         </div>
 
-        <div style="height: 14px;"></div>
+        <div class="button-panel">
+          <div class="primary-row">
+            <button id="openBtn" class="btn btn-open">
+              <span class="btn-open-title">OPEN DOOR</span>
+              <span class="btn-open-sub">一键接通并执行开门</span>
+            </button>
 
-        <button id="openBtn" class="btn btn-open">
-          <span class="btn-open-title">OPEN DOOR</span>
-          <span class="btn-open-sub">发送一次开门指令</span>
-        </button>
+            <div class="toggle-panel">
+              <div class="toggle-copy">
+                <div class="toggle-label">自动挂机</div>
+                <div class="toggle-sub">一键开门后自动挂断</div>
+              </div>
+              <div class="switch-wrap">
+                <label class="switch">
+                  <input id="autoHangupToggle" type="checkbox" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="secondary-row">
+            <button id="pickupBtn" class="btn btn-secondary">
+              接电话
+              <span class="sub">接通话筒，不执行开门</span>
+            </button>
+
+            <button id="unlockBtn" class="btn btn-secondary">
+              开门
+              <span class="sub">仅发送按钮按压指令</span>
+            </button>
+          </div>
+
+          <button id="debugBtn" class="btn btn-debug hidden">进入后台调试页</button>
+        </div>
       </section>
 
       <section class="status-panel">
@@ -548,6 +733,10 @@
       appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
     };
 
+    const ADMIN_UID = "Mkcg6WPhneTMfmJmbUBD5h9Dpbb2";
+    const AUTO_HANGUP_KEY = "door-control-auto-hangup";
+    const PICKUP_STATE_KEY = "door-control-pickup-active";
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
@@ -557,13 +746,19 @@
     const appSection = document.getElementById("appSection");
     const loginBtn = document.getElementById("loginBtn");
     const openBtn = document.getElementById("openBtn");
+    const pickupBtn = document.getElementById("pickupBtn");
+    const unlockBtn = document.getElementById("unlockBtn");
     const logoutBtn = document.getElementById("logoutBtn");
+    const debugBtn = document.getElementById("debugBtn");
+    const autoHangupToggle = document.getElementById("autoHangupToggle");
+
     const userEmail = document.getElementById("userEmail");
     const avatar = document.getElementById("avatar");
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
 
     let busy = false;
+    let pickupActive = false;
 
     function setStatus(message, type = "muted") {
       statusText.textContent = message;
@@ -581,10 +776,45 @@
         "●";
     }
 
+    function setButtonsDisabled(disabled) {
+      openBtn.disabled = disabled;
+      pickupBtn.disabled = disabled;
+      unlockBtn.disabled = disabled;
+    }
+
+    function loadAutoHangupPreference() {
+      const saved = localStorage.getItem(AUTO_HANGUP_KEY);
+      autoHangupToggle.checked = saved === null ? true : saved === "true";
+    }
+
+    function saveAutoHangupPreference() {
+      localStorage.setItem(AUTO_HANGUP_KEY, String(autoHangupToggle.checked));
+    }
+
+    function loadPickupState() {
+      pickupActive = localStorage.getItem(PICKUP_STATE_KEY) === "true";
+      updatePickupButton();
+    }
+
+    function savePickupState() {
+      localStorage.setItem(PICKUP_STATE_KEY, String(pickupActive));
+    }
+
+    function updatePickupButton() {
+      if (pickupActive) {
+        pickupBtn.classList.add("btn-hangup");
+        pickupBtn.innerHTML = `挂电话<span class="sub">将话筒恢复到挂机位</span>`;
+      } else {
+        pickupBtn.classList.remove("btn-hangup");
+        pickupBtn.innerHTML = `接电话<span class="sub">接通话筒，不执行开门</span>`;
+      }
+    }
+
     function setLoggedOutUI() {
       loginSection.classList.remove("hidden");
       appSection.classList.add("hidden");
       logoutBtn.classList.add("hidden");
+      debugBtn.classList.add("hidden");
       userEmail.textContent = "未登录";
       avatar.textContent = "U";
     }
@@ -595,6 +825,38 @@
       logoutBtn.classList.remove("hidden");
       userEmail.textContent = user.email || "Unknown user";
       avatar.textContent = (user.email?.[0] || "U").toUpperCase();
+
+      if (user.uid === ADMIN_UID) {
+        debugBtn.classList.remove("hidden");
+      } else {
+        debugBtn.classList.add("hidden");
+      }
+    }
+
+    async function sendCommand(commandName, pendingPayload = {}) {
+      const user = auth.currentUser;
+      if (!user) {
+        setStatus("你还没有登录。", "err");
+        return false;
+      }
+
+      const cmdRef = ref(db, `commands/${commandName}`);
+      const snapshot = await get(cmdRef);
+      const current = snapshot.val();
+
+      if (current && current.pending === true) {
+        setStatus("设备还在处理上一条同类指令。", "err");
+        return false;
+      }
+
+      await set(cmdRef, {
+        pending: true,
+        requestedAt: Date.now(),
+        requestedBy: user.uid,
+        ...pendingPayload
+      });
+
+      return true;
     }
 
     loginBtn.addEventListener("click", async () => {
@@ -617,6 +879,14 @@
       }
     });
 
+    autoHangupToggle.addEventListener("change", () => {
+      saveAutoHangupPreference();
+      setStatus(
+        autoHangupToggle.checked ? "自动挂机已开启。" : "自动挂机已关闭。",
+        "ok"
+      );
+    });
+
     openBtn.addEventListener("click", async () => {
       const user = auth.currentUser;
       if (!user) {
@@ -626,23 +896,26 @@
       if (busy) return;
 
       busy = true;
-      openBtn.disabled = true;
-      setStatus("正在发送指令…", "warn");
+      setButtonsDisabled(true);
+      setStatus("正在发送一键开门指令…", "warn");
 
       try {
-        const openRef = ref(db, "commands/open");
-        const snapshot = await get(openRef);
-        const current = snapshot.val();
+        const ok = await sendCommand("open", {
+          autoHangup: autoHangupToggle.checked
+        });
 
-        if (current && current.pending === true) {
-          setStatus("设备还在处理上一条指令。", "err");
-        } else {
-          await set(openRef, {
-            pending: true,
-            requestedAt: Date.now(),
-            requestedBy: user.uid
-          });
-          setStatus("指令已发送。", "ok");
+        if (ok) {
+          if (autoHangupToggle.checked) {
+            pickupActive = false;
+            savePickupState();
+            updatePickupButton();
+            setStatus("一键开门指令已发送，完成后将自动挂机。", "ok");
+          } else {
+            pickupActive = true;
+            savePickupState();
+            updatePickupButton();
+            setStatus("一键开门指令已发送，完成后保持接通。", "ok");
+          }
         }
       } catch (err) {
         console.error(err);
@@ -650,20 +923,100 @@
       } finally {
         setTimeout(() => {
           busy = false;
-          openBtn.disabled = false;
+          setButtonsDisabled(false);
         }, 1200);
       }
+    });
+
+    pickupBtn.addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        setStatus("你还没有登录。", "err");
+        return;
+      }
+      if (busy) return;
+
+      busy = true;
+      setButtonsDisabled(true);
+
+      try {
+        if (!pickupActive) {
+          setStatus("正在发送接电话指令…", "warn");
+          const ok = await sendCommand("pickup");
+          if (ok) {
+            pickupActive = true;
+            savePickupState();
+            updatePickupButton();
+            setStatus("接电话指令已发送。", "ok");
+          }
+        } else {
+          setStatus("正在发送挂机指令…", "warn");
+          const ok = await sendCommand("hangup");
+          if (ok) {
+            pickupActive = false;
+            savePickupState();
+            updatePickupButton();
+            setStatus("挂机指令已发送。", "ok");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus("发送失败。请检查数据库规则与登录状态。", "err");
+      } finally {
+        setTimeout(() => {
+          busy = false;
+          setButtonsDisabled(false);
+        }, 1000);
+      }
+    });
+
+    unlockBtn.addEventListener("click", async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        setStatus("你还没有登录。", "err");
+        return;
+      }
+      if (busy) return;
+
+      busy = true;
+      setButtonsDisabled(true);
+      setStatus("正在发送开门指令…", "warn");
+
+      try {
+        const ok = await sendCommand("unlock");
+        if (ok) {
+          setStatus("开门指令已发送。", "ok");
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus("发送失败。请检查数据库规则与登录状态。", "err");
+      } finally {
+        setTimeout(() => {
+          busy = false;
+          setButtonsDisabled(false);
+        }, 1000);
+      }
+    });
+
+    debugBtn.addEventListener("click", () => {
+      window.location.href = "./admin.html";
     });
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
         setLoggedInUI(user);
-        setStatus("已登录，可以发送指令。", "ok");
+        setStatus("已登录，可以发送门禁指令。", "ok");
       } else {
         setLoggedOutUI();
+        pickupActive = false;
+        savePickupState();
+        updatePickupButton();
         setStatus("请先登录。", "muted");
       }
     });
+
+    loadAutoHangupPreference();
+    loadPickupState();
   </script>
 </body>
 </html>
