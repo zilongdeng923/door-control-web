@@ -7,663 +7,215 @@
   <meta name="theme-color" content="#0b1226" />
   <style>
     :root {
+      --bg: #0b1226;
       --text: #eef4ff;
       --muted: #a9bad7;
-      --muted-2: #91a4c6;
-      --success: #7ae39e;
-      --error: #ffb3b3;
-      --warning: #ffe29a;
-
-      --panel-bg: rgba(9, 15, 30, 0.38);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --panel-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
-
-      --btn-blue-1: rgba(37, 99, 235, 0.96);
-      --btn-blue-2: rgba(59, 130, 246, 0.94);
-      --btn-blue-3: rgba(120, 184, 255, 0.92);
-
-      --btn-soft-1: rgba(255,255,255,0.10);
-      --btn-soft-2: rgba(255,255,255,0.05);
-
-      --btn-danger-1: rgba(239, 68, 68, 0.92);
-      --btn-danger-2: rgba(248, 113, 113, 0.92);
-
-      --radius-xl: 30px;
-      --radius-lg: 22px;
-      --radius-md: 18px;
-      --radius-sm: 14px;
+      --muted2: #91a4c6;
+      --ok: #7ae39e;
+      --err: #ffb3b3;
+      --warn: #ffe29a;
+      --panel: rgba(9, 15, 30, 0.38);
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 24px 60px rgba(0,0,0,0.42);
+      --blue1: rgba(37,99,235,0.96);
+      --blue2: rgba(59,130,246,0.94);
+      --blue3: rgba(120,184,255,0.92);
+      --danger1: rgba(239,68,68,0.92);
+      --danger2: rgba(248,113,113,0.92);
     }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0;
-      min-height: 100%;
+      margin: 0; min-height: 100%;
       font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
-      color: var(--text);
-      background: #0b1226;
+      color: var(--text); background: var(--bg);
     }
-
     body {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 24px 18px;
-      position: relative;
-      overflow-x: hidden;
+      min-height: 100vh; display: flex; justify-content: center;
+      padding: 24px 18px; position: relative; overflow-x: hidden;
     }
-
     body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
+      content: ""; position: fixed; inset: 0; z-index: 0;
       background:
-        radial-gradient(circle at center,
-          rgba(0,0,0,0.10) 0%,
-          rgba(0,0,0,0.48) 58%,
-          rgba(0,0,0,0.76) 100%
-        ),
-        radial-gradient(circle at center,
-          rgba(96,165,250,0.18) 0%,
-          rgba(96,165,250,0.06) 24%,
-          rgba(0,0,0,0) 48%
-        ),
+        radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),
+        radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%),
         url("./assets/bg-door.png");
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
       filter: brightness(1.12) contrast(1.08) saturate(1.02);
-      z-index: 0;
     }
-
     body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background:
-        radial-gradient(
-          ellipse at 50% 58%,
-          rgba(170, 210, 255, 0.20) 0%,
-          rgba(120, 180, 255, 0.12) 18%,
-          rgba(80, 140, 255, 0.06) 34%,
-          rgba(255, 255, 255, 0.00) 56%
-        ),
-        radial-gradient(
-          ellipse at 50% 64%,
-          rgba(255, 255, 255, 0.22) 0%,
-          rgba(190, 220, 255, 0.14) 16%,
-          rgba(120, 180, 255, 0.06) 28%,
-          rgba(255, 255, 255, 0.00) 42%
-        ),
-        radial-gradient(
-          circle at center,
-          rgba(255,255,255,0.05) 0%,
-          rgba(255,255,255,0.00) 42%
-        );
-      animation: doorBloom 4.8s ease-in-out infinite;
+        radial-gradient(ellipse at 50% 58%, rgba(170,210,255,0.20) 0%, rgba(120,180,255,0.12) 18%, rgba(80,140,255,0.06) 34%, rgba(255,255,255,0) 56%),
+        radial-gradient(ellipse at 50% 64%, rgba(255,255,255,0.22) 0%, rgba(190,220,255,0.14) 16%, rgba(120,180,255,0.06) 28%, rgba(255,255,255,0) 42%);
+      animation: bloom 4.8s ease-in-out infinite;
     }
-
-    @keyframes doorBloom {
-      0%, 100% {
-        opacity: 0.72;
-        transform: scale(1);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1.02);
-      }
-    }
+    @keyframes bloom { 0%,100%{opacity:.72;transform:scale(1)} 50%{opacity:1;transform:scale(1.02)} }
 
     .app {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 430px;
-      min-height: calc(100vh - 48px);
-      display: flex;
-      flex-direction: column;
-      animation: floatPanel 6.6s ease-in-out infinite;
+      position: relative; z-index: 1; width: 100%; max-width: 430px;
+      min-height: calc(100vh - 48px); display: flex; flex-direction: column;
     }
-
-    @keyframes floatPanel {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-6px); }
-    }
-
-    .top-overlay {
-      padding-top: 6px;
-    }
-
-    .top-chips {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 28px;
-    }
-
+    .hero { text-align: center; padding-top: 8px; }
+    .chips { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
     .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      font-size: 12px;
-      color: #c8d6f0;
-      background: rgba(7, 13, 28, 0.28);
-      border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      padding:10px 14px; border-radius:999px; font-size:12px; color:#c8d6f0;
+      background: rgba(7,13,28,0.28); border:1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(0,0,0,0.18);
     }
+    .title { margin:0 0 14px; font-size:48px; font-weight:800; letter-spacing:-0.045em; line-height:1; }
+    .subtitle { margin:0; color:var(--muted); font-size:15px; line-height:1.75; }
+    .space { flex:1; min-height:250px; }
 
-    .chip-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--success);
-      box-shadow: 0 0 12px rgba(122, 227, 158, 0.85);
+    .panel {
+      background: var(--panel); border:1px solid var(--border); border-radius:30px;
+      backdrop-filter: blur(20px); box-shadow: var(--shadow);
     }
-
-    .hero-text {
-      text-align: center;
-      padding: 0 8px;
-    }
-
-    .brand-title {
-      margin: 0 0 14px;
-      font-size: 48px;
-      font-weight: 800;
-      letter-spacing: -0.045em;
-      line-height: 1;
-      text-shadow: 0 2px 16px rgba(0,0,0,0.28);
-    }
-
-    .brand-subtitle {
-      margin: 0;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.75;
-      text-shadow: 0 1px 10px rgba(0,0,0,0.22);
-    }
-
-    .door-space {
-      flex: 1;
-      min-height: 250px;
-    }
-
-    .control-stack {
-      padding-bottom: 8px;
-    }
-
-    .login-panel,
-    .account-panel,
-    .status-panel,
-    .button-panel,
-    .toggle-panel {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--panel-shadow);
-    }
-
-    .login-panel {
-      padding: 16px;
-    }
-
-    #appSection {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .account-panel {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 16px;
-    }
-
+    .login-panel, .account-panel, .status-panel, .button-panel { padding:16px; }
+    #appSection { display:flex; flex-direction:column; gap:14px; }
+    .account-panel { display:flex; gap:14px; align-items:center; }
     .avatar {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(135deg, #2563eb, #60a5fa);
-      color: white;
-      font-size: 18px;
-      font-weight: 800;
-      flex-shrink: 0;
-      box-shadow:
-        0 8px 20px rgba(37,99,235,0.28),
-        inset 0 1px 0 rgba(255,255,255,0.25);
+      width:50px; height:50px; border-radius:50%; display:grid; place-items:center;
+      background: linear-gradient(135deg, #2563eb, #60a5fa); font-weight:800;
+      box-shadow: 0 8px 20px rgba(37,99,235,0.28);
     }
-
-    .user-meta {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .user-label {
-      color: var(--muted-2);
-      font-size: 12px;
-      margin-bottom: 5px;
-      letter-spacing: 0.03em;
-    }
-
-    .user-email {
-      font-size: 14px;
-      line-height: 1.55;
-      word-break: break-word;
-      color: var(--text);
-    }
+    .user-label { color:var(--muted2); font-size:12px; margin-bottom:5px; }
+    .user-email { font-size:14px; line-height:1.55; word-break:break-word; }
 
     .btn {
-      width: 100%;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.16s ease, opacity 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      user-select: none;
+      width:100%; border:none; cursor:pointer; color:var(--text);
+      transition: transform .16s ease, opacity .2s ease, filter .2s ease;
     }
-
-    .btn:active {
-      transform: scale(0.985);
-    }
-
-    .btn:disabled {
-      opacity: 0.64;
-      cursor: not-allowed;
-      filter: saturate(0.7);
-    }
+    .btn:active { transform: scale(0.985); }
+    .btn:disabled { opacity:.64; cursor:not-allowed; filter:saturate(.7); }
 
     .btn-login {
-      padding: 18px 18px;
-      border-radius: 20px;
-      font-size: 18px;
-      font-weight: 700;
-      color: white;
+      padding:18px; border-radius:20px; font-size:18px; font-weight:700; color:white;
       background: linear-gradient(135deg, rgba(37,99,235,0.96), rgba(96,165,250,0.94));
-      box-shadow:
-        0 14px 32px rgba(37,99,235,0.32),
-        inset 0 1px 0 rgba(255,255,255,0.20);
+      box-shadow: 0 14px 32px rgba(37,99,235,0.32);
     }
 
-    .button-panel {
-      padding: 14px;
-    }
-
-    .primary-row {
-      display: flex;
-      gap: 12px;
-      align-items: stretch;
-    }
-
+    .primary-row { display:flex; gap:12px; align-items:stretch; }
     .btn-open {
-      position: relative;
-      overflow: hidden;
-      border-radius: 26px;
-      padding: 24px 18px;
-      flex: 1;
+      position:relative; overflow:hidden; flex:1; border-radius:26px; padding:24px 18px;
       background:
-        linear-gradient(180deg,
-          rgba(255,255,255,0.18) 0%,
-          rgba(255,255,255,0.05) 16%,
-          rgba(255,255,255,0.02) 100%
-        ),
-        linear-gradient(135deg,
-          var(--btn-blue-1) 0%,
-          var(--btn-blue-2) 52%,
-          var(--btn-blue-3) 100%
-        );
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.26),
-        inset 0 -12px 28px rgba(255,255,255,0.04),
-        0 14px 36px rgba(37,99,235,0.30),
-        0 0 36px rgba(96,165,250,0.22);
+        linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 16%, rgba(255,255,255,0.02) 100%),
+        linear-gradient(135deg, var(--blue1) 0%, var(--blue2) 52%, var(--blue3) 100%);
+      box-shadow: 0 14px 36px rgba(37,99,235,0.30), 0 0 36px rgba(96,165,250,0.22);
     }
-
     .btn-open::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        120deg,
-        transparent 18%,
-        rgba(255,255,255,0.24) 42%,
-        transparent 68%
-      );
-      transform: translateX(-150%);
-      animation: sweep 3.9s linear infinite;
+      content:""; position:absolute; inset:0;
+      background: linear-gradient(120deg, transparent 18%, rgba(255,255,255,0.24) 42%, transparent 68%);
+      transform: translateX(-150%); animation:sweep 3.9s linear infinite;
     }
-
-    .btn-open::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background:
-        radial-gradient(circle at 50% 0%,
-          rgba(255,255,255,0.36),
-          rgba(255,255,255,0.00) 42%);
-      pointer-events: none;
-      opacity: 0.9;
-    }
-
-    @keyframes sweep {
-      0% { transform: translateX(-150%); }
-      100% { transform: translateX(150%); }
-    }
-
-    .btn-open-title,
-    .btn-open-sub {
-      position: relative;
-      z-index: 1;
-      display: block;
-      text-align: center;
-    }
-
-    .btn-open-title {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: #f8fbff;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.18);
-    }
-
-    .btn-open-sub {
-      margin-top: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.82);
-      letter-spacing: 0.02em;
-    }
+    @keyframes sweep { 0%{transform:translateX(-150%)} 100%{transform:translateX(150%)} }
+    .btn-open-title, .btn-open-sub { position:relative; z-index:1; display:block; text-align:center; }
+    .btn-open-title { font-size:26px; font-weight:800; letter-spacing:.08em; }
+    .btn-open-sub { margin-top:8px; font-size:12px; color:rgba(255,255,255,0.82); }
 
     .toggle-panel {
-      width: 122px;
-      padding: 12px 12px 10px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 8px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
-        rgba(9, 15, 30, 0.44);
+      width:122px; padding:12px 12px 10px; border-radius:26px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+      border:1px solid rgba(255,255,255,0.08);
+      display:flex; flex-direction:column; justify-content:center; gap:8px;
     }
+    .toggle-label { font-size:12px; color:var(--muted2); text-align:center; }
+    .toggle-sub { font-size:11px; color:rgba(255,255,255,0.62); text-align:center; line-height:1.35; }
 
-    .toggle-label {
-      font-size: 12px;
-      color: var(--muted-2);
-      text-align: center;
-      letter-spacing: 0.04em;
-    }
-
-    .toggle-sub {
-      font-size: 11px;
-      color: rgba(255,255,255,0.62);
-      text-align: center;
-      line-height: 1.35;
-    }
-
-    .switch-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .switch {
-      position: relative;
-      width: 66px;
-      height: 38px;
-      display: inline-block;
-    }
-
-    .switch input {
-      display: none;
-    }
-
+    .switch-wrap { display:flex; justify-content:center; }
+    .switch { position:relative; width:66px; height:38px; display:inline-block; }
+    .switch input { display:none; }
     .slider {
-      position: absolute;
-      inset: 0;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: inset 0 2px 10px rgba(0,0,0,0.24);
-      transition: 0.25s ease;
+      position:absolute; inset:0; border-radius:999px; background:rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.12); box-shadow: inset 0 2px 10px rgba(0,0,0,0.24);
+      transition:.25s ease;
     }
-
     .slider::before {
-      content: "";
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      left: 4px;
-      top: 4px;
-      border-radius: 50%;
+      content:""; position:absolute; width:28px; height:28px; left:4px; top:4px; border-radius:50%;
       background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(219,231,255,0.96));
-      box-shadow:
-        0 6px 16px rgba(0,0,0,0.22),
-        inset 0 1px 0 rgba(255,255,255,0.8);
-      transition: 0.25s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.22); transition:.25s ease;
     }
-
     .switch input:checked + .slider {
       background: linear-gradient(135deg, rgba(37,99,235,0.92), rgba(96,165,250,0.92));
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.18),
-        0 0 18px rgba(96,165,250,0.18);
     }
+    .switch input:checked + .slider::before { transform: translateX(28px); }
 
-    .switch input:checked + .slider::before {
-      transform: translateX(28px);
-    }
-
-    .secondary-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 14px;
-    }
-
+    .secondary-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
     .btn-secondary {
-      padding: 18px 16px;
-      border-radius: 22px;
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
-        rgba(12, 20, 40, 0.46);
-      border: 1px solid rgba(255,255,255,0.10);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.10),
-        0 10px 28px rgba(0,0,0,0.20);
+      padding:18px 16px; border-radius:22px; font-size:17px; font-weight:700;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)), rgba(12,20,40,0.46);
+      border:1px solid rgba(255,255,255,0.10); box-shadow: 0 10px 28px rgba(0,0,0,0.20);
     }
-
-    .btn-secondary .sub {
-      display: block;
-      margin-top: 6px;
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--muted);
-      letter-spacing: 0.01em;
-    }
-
+    .btn-secondary .sub { display:block; margin-top:6px; font-size:11px; font-weight:500; color:var(--muted); }
     .btn-hangup {
       background:
         linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
-        linear-gradient(135deg, var(--btn-danger-1), var(--btn-danger-2));
-      color: #fff8f8;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.18),
-        0 10px 30px rgba(239,68,68,0.26);
+        linear-gradient(135deg, var(--danger1), var(--danger2));
+      color:#fff8f8;
     }
-
     .btn-debug {
-      margin-top: 14px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #dbeafe;
-      background: rgba(37,99,235,0.10);
-      border: 1px solid rgba(96,165,250,0.20);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      margin-top:14px; padding:14px 16px; border-radius:18px; font-size:15px; font-weight:700;
+      color:#dbeafe; background: rgba(37,99,235,0.10); border:1px solid rgba(96,165,250,0.20);
     }
 
-    .status-panel {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 16px;
-      margin-top: 14px;
-    }
-
+    .status-panel { display:flex; gap:12px; align-items:flex-start; margin-top:14px; }
     .status-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text);
+      width:36px; height:36px; border-radius:12px; display:grid; place-items:center;
+      background: rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08);
     }
-
-    .status-body {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .status-title {
-      font-size: 13px;
-      color: var(--muted-2);
-      font-weight: 600;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .status-text {
-      font-size: 15px;
-      line-height: 1.65;
-      word-break: break-word;
-    }
-
-    .ok-text { color: #c8f7d7; }
-    .err-text { color: #ffd2d2; }
-    .warn-text { color: #ffe7ad; }
-    .muted-text { color: var(--muted); }
+    .status-title { font-size:13px; color:var(--muted2); font-weight:600; margin-bottom:6px; letter-spacing:.08em; }
+    .status-text { font-size:15px; line-height:1.65; word-break:break-word; }
+    .ok { color:#c8f7d7; } .err { color:#ffd2d2; } .warn { color:#ffe7ad; } .muted { color:var(--muted); }
 
     .btn-logout {
-      margin-top: 14px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      font-size: 15px;
-      font-weight: 700;
-      color: #ffb3b3;
-      background: rgba(239,68,68,0.08);
-      border: 1px solid rgba(239,68,68,0.18);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      margin-top:14px; padding:14px 16px; border-radius:18px; font-size:15px; font-weight:700;
+      color:#ffb3b3; background: rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.18);
     }
 
-    .hidden {
-      display: none !important;
-    }
+    .hidden { display:none !important; }
 
-    @media (max-width: 480px) {
-      .brand-title {
-        font-size: 40px;
-      }
-
-      .brand-subtitle {
-        font-size: 14px;
-      }
-
-      .door-space {
-        min-height: 210px;
-      }
-
-      .btn-open-title {
-        font-size: 23px;
-      }
-
-      .primary-row {
-        flex-direction: column;
-      }
-
-      .toggle-panel {
-        width: 100%;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .toggle-panel .toggle-copy {
-        flex: 1;
-        text-align: left;
-      }
-
-      .toggle-label,
-      .toggle-sub {
-        text-align: left;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      body::after,
-      .app,
-      .btn-open::before {
-        animation: none !important;
-      }
+    @media (max-width:480px) {
+      .title { font-size:40px; }
+      .space { min-height:210px; }
+      .primary-row { flex-direction:column; }
+      .toggle-panel { width:100%; flex-direction:row; align-items:center; justify-content:space-between; }
+      .toggle-copy { flex:1; }
+      .toggle-label, .toggle-sub { text-align:left; }
     }
   </style>
 </head>
 <body>
   <main class="app">
-    <section class="top-overlay">
-      <div class="top-chips">
-        <div class="chip">
-          <span class="chip-dot"></span>
-          <span>Remote Access Ready</span>
-        </div>
-        <div class="chip">Firebase Secured</div>
+    <section class="hero">
+      <div class="chips">
+        <div class="chip">Remote Access Ready</div>
+        <div class="chip">Realtime Synced</div>
       </div>
-
-      <div class="hero-text">
-        <h1 class="brand-title">Door Control</h1>
-        <p class="brand-subtitle">
-          使用 Google 登录后发送门禁指令。<br />
-          支持接电话、单独开门与一键开门。
-        </p>
-      </div>
+      <h1 class="title">Door Control</h1>
+      <p class="subtitle">
+        登录后发送门禁指令。<br />
+        页面状态与设备状态实时同步。
+      </p>
     </section>
 
-    <section class="door-space"></section>
+    <section class="space"></section>
 
-    <section class="control-stack">
-      <section id="loginSection" class="login-panel">
+    <section class="controls">
+      <section id="loginSection" class="panel login-panel">
         <button id="loginBtn" class="btn btn-login">使用 Google 登录</button>
       </section>
 
       <section id="appSection" class="hidden">
-        <div class="account-panel">
+        <div class="panel account-panel">
           <div class="avatar" id="avatar">U</div>
-          <div class="user-meta">
+          <div>
             <div class="user-label">当前账户</div>
             <div class="user-email" id="userEmail">未登录</div>
           </div>
         </div>
 
-        <div class="button-panel">
+        <div class="panel button-panel">
           <div class="primary-row">
             <button id="openBtn" class="btn btn-open">
               <span class="btn-open-title">OPEN DOOR</span>
@@ -700,11 +252,11 @@
         </div>
       </section>
 
-      <section class="status-panel">
+      <section class="panel status-panel">
         <div class="status-icon" id="statusIcon">●</div>
-        <div class="status-body">
+        <div>
           <div class="status-title">System Status</div>
-          <div class="status-text muted-text" id="statusText">Ready</div>
+          <div class="status-text muted" id="statusText">Ready</div>
         </div>
       </section>
 
@@ -721,21 +273,26 @@
       signOut,
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      set,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+      apiKey: "YOUR_WEB_API_KEY",
       authDomain: "door-control-1fb5a.firebaseapp.com",
       databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
       projectId: "door-control-1fb5a",
       storageBucket: "door-control-1fb5a.firebasestorage.app",
       messagingSenderId: "594532135937",
-      appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+      appId: "YOUR_WEB_APP_ID"
     };
 
-    const ADMIN_UID = "Mkcg6WPhneTMfmJmbUBD5h9Dpbb2";
+    const ADMIN_UID = "YOUR_ADMIN_UID";
     const AUTO_HANGUP_KEY = "door-control-auto-hangup";
-    const PICKUP_STATE_KEY = "door-control-pickup-active";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -751,63 +308,21 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const debugBtn = document.getElementById("debugBtn");
     const autoHangupToggle = document.getElementById("autoHangupToggle");
-
     const userEmail = document.getElementById("userEmail");
     const avatar = document.getElementById("avatar");
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
 
-    let busy = false;
-    let pickupActive = false;
+    let latestDeviceState = null;
+    let localBusyGuard = false;
 
     function setStatus(message, type = "muted") {
       statusText.textContent = message;
-      statusText.className = `status-text ${
-        type === "ok" ? "ok-text" :
-        type === "err" ? "err-text" :
-        type === "warn" ? "warn-text" :
-        "muted-text"
-      }`;
-
+      statusText.className = `status-text ${type}`;
       statusIcon.textContent =
         type === "ok" ? "✓" :
         type === "err" ? "!" :
-        type === "warn" ? "•" :
-        "●";
-    }
-
-    function setButtonsDisabled(disabled) {
-      openBtn.disabled = disabled;
-      pickupBtn.disabled = disabled;
-      unlockBtn.disabled = disabled;
-    }
-
-    function loadAutoHangupPreference() {
-      const saved = localStorage.getItem(AUTO_HANGUP_KEY);
-      autoHangupToggle.checked = saved === null ? true : saved === "true";
-    }
-
-    function saveAutoHangupPreference() {
-      localStorage.setItem(AUTO_HANGUP_KEY, String(autoHangupToggle.checked));
-    }
-
-    function loadPickupState() {
-      pickupActive = localStorage.getItem(PICKUP_STATE_KEY) === "true";
-      updatePickupButton();
-    }
-
-    function savePickupState() {
-      localStorage.setItem(PICKUP_STATE_KEY, String(pickupActive));
-    }
-
-    function updatePickupButton() {
-      if (pickupActive) {
-        pickupBtn.classList.add("btn-hangup");
-        pickupBtn.innerHTML = `挂电话<span class="sub">将话筒恢复到挂机位</span>`;
-      } else {
-        pickupBtn.classList.remove("btn-hangup");
-        pickupBtn.innerHTML = `接电话<span class="sub">接通话筒，不执行开门</span>`;
-      }
+        type === "warn" ? "•" : "●";
     }
 
     function setLoggedOutUI() {
@@ -833,30 +348,69 @@
       }
     }
 
-    async function sendCommand(commandName, pendingPayload = {}) {
-      const user = auth.currentUser;
-      if (!user) {
-        setStatus("你还没有登录。", "err");
-        return false;
+    function loadAutoHangupPreference() {
+      const saved = localStorage.getItem(AUTO_HANGUP_KEY);
+      autoHangupToggle.checked = saved === null ? true : saved === "true";
+    }
+
+    function saveAutoHangupPreference() {
+      localStorage.setItem(AUTO_HANGUP_KEY, String(autoHangupToggle.checked));
+    }
+
+    function updateButtonsFromDeviceState(state) {
+      const now = Date.now();
+      const online = !!state?.online && (now - (state?.lastSeen || 0) < 10000);
+      const busy = !!state?.busy || localBusyGuard;
+      const callActive = !!state?.callActive;
+      const error = state?.error || "";
+      const lastAction = state?.lastAction || "";
+
+      if (callActive) {
+        pickupBtn.classList.add("btn-hangup");
+        pickupBtn.innerHTML = `挂电话<span class="sub">将话筒恢复到挂机位</span>`;
+      } else {
+        pickupBtn.classList.remove("btn-hangup");
+        pickupBtn.innerHTML = `接电话<span class="sub">接通话筒，不执行开门</span>`;
       }
+
+      openBtn.disabled = !online || busy;
+      pickupBtn.disabled = !online || busy;
+      unlockBtn.disabled = !online || busy;
+
+      if (!online) {
+        setStatus("设备离线或心跳超时。", "err");
+      } else if (busy) {
+        setStatus(`设备正在执行：${lastAction || "命令"}`, "warn");
+      } else if (error) {
+        setStatus(`设备错误：${error}`, "err");
+      } else {
+        setStatus("设备在线，状态已同步。", "ok");
+      }
+    }
+
+    async function sendCommand(commandName, extra = {}) {
+      const user = auth.currentUser;
+      if (!user) throw new Error("not_logged_in");
 
       const cmdRef = ref(db, `commands/${commandName}`);
-      const snapshot = await get(cmdRef);
-      const current = snapshot.val();
+      const snap = await get(cmdRef);
+      const cur = snap.val();
 
-      if (current && current.pending === true) {
-        setStatus("设备还在处理上一条同类指令。", "err");
-        return false;
+      if (cur?.pending === true) {
+        throw new Error("command_busy");
       }
+
+      const requestId = `${commandName}_${Date.now()}`;
 
       await set(cmdRef, {
         pending: true,
+        requestId,
         requestedAt: Date.now(),
         requestedBy: user.uid,
-        ...pendingPayload
+        ...extra
       });
 
-      return true;
+      return requestId;
     }
 
     loginBtn.addEventListener("click", async () => {
@@ -865,7 +419,7 @@
         await signInWithPopup(auth, provider);
       } catch (err) {
         console.error(err);
-        setStatus("登录失败。请检查授权域名和 Firebase 配置。", "err");
+        setStatus("登录失败。请检查 Firebase 配置。", "err");
       }
     });
 
@@ -881,120 +435,59 @@
 
     autoHangupToggle.addEventListener("change", () => {
       saveAutoHangupPreference();
-      setStatus(
-        autoHangupToggle.checked ? "自动挂机已开启。" : "自动挂机已关闭。",
-        "ok"
-      );
+      setStatus(autoHangupToggle.checked ? "自动挂机已开启。" : "自动挂机已关闭。", "ok");
     });
 
     openBtn.addEventListener("click", async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        setStatus("你还没有登录。", "err");
-        return;
-      }
-      if (busy) return;
-
-      busy = true;
-      setButtonsDisabled(true);
-      setStatus("正在发送一键开门指令…", "warn");
-
       try {
-        const ok = await sendCommand("open", {
-          autoHangup: autoHangupToggle.checked
-        });
-
-        if (ok) {
-          if (autoHangupToggle.checked) {
-            pickupActive = false;
-            savePickupState();
-            updatePickupButton();
-            setStatus("一键开门指令已发送，完成后将自动挂机。", "ok");
-          } else {
-            pickupActive = true;
-            savePickupState();
-            updatePickupButton();
-            setStatus("一键开门指令已发送，完成后保持接通。", "ok");
-          }
-        }
+        localBusyGuard = true;
+        updateButtonsFromDeviceState(latestDeviceState || {});
+        await sendCommand("open", { autoHangup: autoHangupToggle.checked });
       } catch (err) {
         console.error(err);
-        setStatus("发送失败。请检查数据库规则与登录状态。", "err");
+        setStatus("发送一键开门指令失败。", "err");
       } finally {
         setTimeout(() => {
-          busy = false;
-          setButtonsDisabled(false);
-        }, 1200);
+          localBusyGuard = false;
+          updateButtonsFromDeviceState(latestDeviceState || {});
+        }, 600);
       }
     });
 
     pickupBtn.addEventListener("click", async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        setStatus("你还没有登录。", "err");
-        return;
-      }
-      if (busy) return;
-
-      busy = true;
-      setButtonsDisabled(true);
-
       try {
-        if (!pickupActive) {
-          setStatus("正在发送接电话指令…", "warn");
-          const ok = await sendCommand("pickup");
-          if (ok) {
-            pickupActive = true;
-            savePickupState();
-            updatePickupButton();
-            setStatus("接电话指令已发送。", "ok");
-          }
+        localBusyGuard = true;
+        updateButtonsFromDeviceState(latestDeviceState || {});
+        const callActive = !!latestDeviceState?.callActive;
+        if (callActive) {
+          await sendCommand("hangup");
         } else {
-          setStatus("正在发送挂机指令…", "warn");
-          const ok = await sendCommand("hangup");
-          if (ok) {
-            pickupActive = false;
-            savePickupState();
-            updatePickupButton();
-            setStatus("挂机指令已发送。", "ok");
-          }
+          await sendCommand("pickup");
         }
       } catch (err) {
         console.error(err);
-        setStatus("发送失败。请检查数据库规则与登录状态。", "err");
+        setStatus("发送接听/挂机指令失败。", "err");
       } finally {
         setTimeout(() => {
-          busy = false;
-          setButtonsDisabled(false);
-        }, 1000);
+          localBusyGuard = false;
+          updateButtonsFromDeviceState(latestDeviceState || {});
+        }, 600);
       }
     });
 
     unlockBtn.addEventListener("click", async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        setStatus("你还没有登录。", "err");
-        return;
-      }
-      if (busy) return;
-
-      busy = true;
-      setButtonsDisabled(true);
-      setStatus("正在发送开门指令…", "warn");
-
       try {
-        const ok = await sendCommand("unlock");
-        if (ok) {
-          setStatus("开门指令已发送。", "ok");
-        }
+        localBusyGuard = true;
+        updateButtonsFromDeviceState(latestDeviceState || {});
+        await sendCommand("unlock");
       } catch (err) {
         console.error(err);
-        setStatus("发送失败。请检查数据库规则与登录状态。", "err");
+        setStatus("发送开门指令失败。", "err");
       } finally {
         setTimeout(() => {
-          busy = false;
-          setButtonsDisabled(false);
-        }, 1000);
+          localBusyGuard = false;
+          updateButtonsFromDeviceState(latestDeviceState || {});
+        }, 600);
       }
     });
 
@@ -1005,18 +498,17 @@
     onAuthStateChanged(auth, (user) => {
       if (user) {
         setLoggedInUI(user);
-        setStatus("已登录，可以发送门禁指令。", "ok");
       } else {
         setLoggedOutUI();
-        pickupActive = false;
-        savePickupState();
-        updatePickupButton();
-        setStatus("请先登录。", "muted");
       }
     });
 
+    onValue(ref(db, "deviceState"), (snapshot) => {
+      latestDeviceState = snapshot.val() || {};
+      updateButtonsFromDeviceState(latestDeviceState);
+    });
+
     loadAutoHangupPreference();
-    loadPickupState();
   </script>
 </body>
 </html>
