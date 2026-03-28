@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Door Control Receiver</title>
+  <meta name="theme-color" content="#0b1226" />
+  <style>
+    :root {
+      --bg:#0b1226; --text:#eef4ff; --muted:#a9bad7; --ok:#7ae39e; --err:#ffb3b3; --warn:#ffe29a;
+      --panel:rgba(9,15,30,0.44); --border:rgba(255,255,255,0.08); --shadow:0 24px 60px rgba(0,0,0,0.42);
+      --blue1:#2563eb; --blue2:#60a5fa; --danger1:#ef4444; --danger2:#f87171;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; min-height:100%; font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+    body {
+      padding:24px 18px;
+      background:
+        radial-gradient(circle at center, rgba(96,165,250,0.12) 0%, rgba(0,0,0,0) 42%),
+        linear-gradient(180deg,#0b1226,#091122);
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    .hero { margin-bottom: 16px; }
+    .title { font-size: 40px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.04em; }
+    .sub { color: var(--muted); margin:0; line-height:1.7; }
+    .card {
+      background:var(--panel); border:1px solid var(--border); border-radius:26px; padding:18px;
+      backdrop-filter:blur(18px); box-shadow:var(--shadow); margin-bottom:16px;
+    }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    button {
+      border:none; border-radius:16px; padding:12px 16px; cursor:pointer; font-weight:700;
+      color:white; background:linear-gradient(135deg,var(--blue1),var(--blue2));
+    }
+    button.secondary { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); }
+    button.danger { background:linear-gradient(135deg,var(--danger1),var(--danger2)); }
+    button:disabled { opacity: .64; cursor: not-allowed; }
+    .status { line-height:1.7; color:var(--muted); white-space:pre-wrap; }
+    .grid { display:grid; gap:16px; }
+    .request-item {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      padding: 16px;
+      background: rgba(255,255,255,0.03);
+    }
+    .request-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px; }
+    .request-name { font-size: 20px; font-weight: 800; }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .kv { display:grid; gap:8px; color:var(--muted); font-size:14px; line-height:1.6; margin-bottom:14px; }
+    .empty { color: var(--muted); text-align:center; padding: 18px 0; }
+    .ok { color:#c8f7d7; }
+    .err { color:#ffd2d2; }
+    .warn { color:#ffe7ad; }
+    .muted { color:var(--muted); }
+    @media (max-width: 640px) {
+      .request-head { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1 class="title">Door Control Receiver</h1>
+      <p class="sub">独立的接收端页面。当前第一版仅给你本人账号使用，用于查看临时访问申请并快速处理。</p>
+    </section>
+
+    <section class="card">
+      <div id="authInfo" class="status">正在验证身份…</div>
+      <div class="row" style="margin-top:12px;">
+        <button id="loginBtn">使用 Google 登录</button>
+        <button id="logoutBtn" class="secondary">退出登录</button>
+      </div>
+    </section>
+
+    <section id="mainArea" style="display:none;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h3 style="margin:0 0 6px;">待处理申请</h3>
+            <div class="status">这里会显示公开表单提交来的临时访问申请。</div>
+          </div>
+          <button id="refreshBtn" class="secondary">刷新</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="requestList" class="grid"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">日志</h3>
+        <div id="logBox" class="status muted">Ready</div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      set,
+      update,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+      authDomain: "door-control-1fb5a.firebaseapp.com",
+      databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
+      projectId: "door-control-1fb5a",
+      storageBucket: "door-control-1fb5a.firebasestorage.app",
+      messagingSenderId: "594532135937",
+      appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+    };
+
+    const OWNER_UID = "Mkcg6WPhneTMfmJmbUBD5h9Dpbb2";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    const authInfo = document.getElementById("authInfo");
+    const mainArea = document.getElementById("mainArea");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const requestList = document.getElementById("requestList");
+    const logBox = document.getElementById("logBox");
+
+    let requestsCache = {};
+
+    function log(msg, type = "muted") {
+      logBox.className = `status ${type}`;
+      logBox.textContent = msg;
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return "-";
+      try {
+        return new Date(ts).toLocaleString("zh-CN");
+      } catch {
+        return String(ts);
+      }
+    }
+
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    async function sendOpenCommand() {
+      const user = auth.currentUser;
+      if (!user) throw new Error("not_logged_in");
+
+      const cmdRef = ref(db, "commands/open");
+      const snap = await get(cmdRef);
+      const cur = snap.val();
+      if (cur?.pending === true) {
+        throw new Error("device_busy");
+      }
+
+      await set(cmdRef, {
+        pending: true,
+        requestId: `open_${Date.now()}`,
+        requestedAt: Date.now(),
+        requestedBy: user.uid,
+        autoHangup: true
+      });
+    }
+
+    async function approveAndOpen(requestId) {
+      const user = auth.currentUser;
+      if (!user || user.uid !== OWNER_UID) {
+        log("当前账号无权处理该操作。", "err");
+        return;
+      }
+
+      try {
+        await sendOpenCommand();
+        await update(ref(db, `temporaryAccessRequests/${requestId}`), {
+          status: "approved",
+          approvedBy: user.uid,
+          approvedAt: Date.now(),
+          rejectedBy: "",
+          rejectedAt: 0,
+          result: {
+            type: "owner_opened_once",
+            expiresAt: 0
+          }
+        });
+        log(`已处理申请 ${requestId}，并发送一键开门命令。`, "ok");
+      } catch (error) {
+        console.error(error);
+        log(`批准失败：${String(error.message || error)}`, "err");
+      }
+    }
+
+    async function rejectRequest(requestId) {
+      const user = auth.currentUser;
+      if (!user || user.uid !== OWNER_UID) {
+        log("当前账号无权处理该操作。", "err");
+        return;
+      }
+
+      try {
+        await update(ref(db, `temporaryAccessRequests/${requestId}`), {
+          status: "rejected",
+          approvedBy: "",
+          approvedAt: 0,
+          rejectedBy: user.uid,
+          rejectedAt: Date.now(),
+          result: {
+            type: "rejected",
+            expiresAt: 0
+          }
+        });
+        log(`已拒绝申请 ${requestId}。`, "ok");
+      } catch (error) {
+        console.error(error);
+        log(`拒绝失败：${String(error.message || error)}`, "err");
+      }
+    }
+
+    function renderRequests(data) {
+      requestsCache = data || {};
+      const entries = Object.entries(requestsCache)
+        .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
+
+      if (!entries.length) {
+        requestList.innerHTML = '<div class="empty">当前没有申请。</div>';
+        return;
+      }
+
+      requestList.innerHTML = entries.map(([requestId, item]) => {
+        const status = item?.status || "pending";
+        const canAct = status === "pending";
+        return `
+          <div class="request-item">
+            <div class="request-head">
+              <div>
+                <div class="request-name">${esc(item?.name || "未命名申请")}</div>
+                <div class="status muted">申请编号：${esc(requestId)}</div>
+              </div>
+              <div class="badge">${esc(status)}</div>
+            </div>
+            <div class="kv">
+              <div><strong>联系方式：</strong>${esc(item?.contact || "-")}</div>
+              <div><strong>来访原因：</strong>${esc(item?.reason || "-")}</div>
+              <div><strong>备注：</strong>${esc(item?.note || "-")}</div>
+              <div><strong>提交时间：</strong>${esc(fmtTime(item?.createdAt))}</div>
+              <div><strong>处理结果：</strong>${esc(item?.result?.type || "-")}</div>
+            </div>
+            <div class="row">
+              <button data-action="approve" data-id="${esc(requestId)}" ${canAct ? "" : "disabled"}>批准并一键开门</button>
+              <button data-action="reject" data-id="${esc(requestId)}" class="danger" ${canAct ? "" : "disabled"}>拒绝</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error(error);
+        log("登录失败。", "err");
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        log("已退出登录。", "muted");
+      } catch (error) {
+        console.error(error);
+        log("退出失败。", "err");
+      }
+    });
+
+    refreshBtn.addEventListener("click", async () => {
+      try {
+        const snap = await get(ref(db, "temporaryAccessRequests"));
+        renderRequests(snap.val() || {});
+        log("已手动刷新申请列表。", "ok");
+      } catch (error) {
+        console.error(error);
+        log("刷新失败。", "err");
+      }
+    });
+
+    requestList.addEventListener("click", async (event) => {
+      const btn = event.target.closest("button[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const requestId = btn.dataset.id;
+      if (!requestId) return;
+
+      btn.disabled = true;
+      if (action === "approve") {
+        await approveAndOpen(requestId);
+      } else if (action === "reject") {
+        await rejectRequest(requestId);
+      }
+      btn.disabled = false;
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        authInfo.textContent = "未登录。请使用你的 Google 账号登录接收端。";
+        mainArea.style.display = "none";
+        return;
+      }
+
+      if (user.uid !== OWNER_UID) {
+        authInfo.textContent = `当前账号 ${user.email} 无权访问接收端。当前第一版仅允许你的主账号使用。`;
+        mainArea.style.display = "none";
+        return;
+      }
+
+      authInfo.textContent = `已授权：${user.email}`;
+      mainArea.style.display = "block";
+
+      onValue(ref(db, "temporaryAccessRequests"), (snapshot) => {
+        renderRequests(snapshot.val() || {});
+      }, (error) => {
+        console.error(error);
+        log("监听申请列表失败。请检查 Firebase Rules。", "err");
+      });
+    });
+  </script>
+</body>
+</html>

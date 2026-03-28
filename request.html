@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>临时访问申请</title>
+  <meta name="theme-color" content="#0b1226" />
+  <style>
+    :root {
+      --bg: #0b1226;
+      --text: #eef4ff;
+      --muted: #a9bad7;
+      --panel: rgba(9, 15, 30, 0.42);
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 24px 60px rgba(0,0,0,0.42);
+      --blue1: rgba(37,99,235,0.96);
+      --blue2: rgba(59,130,246,0.94);
+      --ok: #c8f7d7;
+      --err: #ffd2d2;
+      --warn: #ffe7ad;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 18px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),
+        radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%);
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      filter: brightness(1.12) contrast(1.08) saturate(1.02);
+    }
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      min-height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+    }
+    .hero { text-align: center; padding-top: 8px; }
+    .chips { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
+    .chip {
+      padding:10px 14px; border-radius:999px; font-size:12px; color:#c8d6f0;
+      background: rgba(7,13,28,0.28); border:1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    }
+    .title { margin:0 0 14px; font-size:42px; font-weight:800; letter-spacing:-0.045em; line-height:1; }
+    .subtitle { margin:0; color:var(--muted); font-size:15px; line-height:1.75; }
+    .space { flex:1; min-height:180px; }
+    .panel {
+      background: var(--panel); border:1px solid var(--border); border-radius:30px;
+      backdrop-filter: blur(20px); box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .form-grid { display: grid; gap: 14px; }
+    label { display:block; font-size:13px; color:var(--muted); margin-bottom:8px; }
+    input, textarea {
+      width:100%; padding:14px 16px; border-radius:18px; border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06); color: var(--text); font-size: 15px; outline:none;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    .btn {
+      width:100%; border:none; cursor:pointer; color:white; padding:18px; border-radius:20px;
+      font-size:18px; font-weight:700; transition: transform .16s ease, opacity .2s ease, filter .2s ease;
+      background: linear-gradient(135deg, var(--blue1), var(--blue2));
+      box-shadow: 0 14px 32px rgba(37,99,235,0.32);
+    }
+    .btn:active { transform: scale(0.985); }
+    .btn:disabled { opacity:.64; cursor:not-allowed; filter:saturate(.7); }
+    .status-panel {
+      display:flex; gap:12px; align-items:flex-start; margin-top:14px;
+      background: var(--panel); border:1px solid var(--border); border-radius:24px;
+      backdrop-filter: blur(20px); box-shadow: var(--shadow); padding:16px;
+    }
+    .status-icon {
+      width:36px; height:36px; border-radius:12px; display:grid; place-items:center;
+      background: rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08);
+    }
+    .status-title { font-size:13px; color:var(--muted); font-weight:600; margin-bottom:6px; letter-spacing:.08em; }
+    .status-text { font-size:15px; line-height:1.65; word-break:break-word; }
+    .ok { color: var(--ok); }
+    .err { color: var(--err); }
+    .warn { color: var(--warn); }
+    .muted { color: var(--muted); }
+    .hint {
+      margin-top: 14px; color: var(--muted); font-size: 13px; line-height: 1.7;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="chips">
+        <div class="chip">Public Request Form</div>
+        <div class="chip">No Login Required</div>
+      </div>
+      <h1 class="title">临时访问申请</h1>
+      <p class="subtitle">
+        无需登录即可提交申请。<br />
+        住户审核后可为你远程开门或发放短时访问权限。
+      </p>
+    </section>
+
+    <section class="space"></section>
+
+    <section class="panel">
+      <form id="requestForm" class="form-grid">
+        <div>
+          <label for="name">姓名 / 称呼</label>
+          <input id="name" maxlength="40" placeholder="例如：Tom" required />
+        </div>
+        <div>
+          <label for="contact">联系方式</label>
+          <input id="contact" maxlength="80" placeholder="手机号 / 邮箱 / 微信号" required />
+        </div>
+        <div>
+          <label for="reason">来访原因</label>
+          <input id="reason" maxlength="120" placeholder="例如：来找室友 / 取东西 / 临时来访" required />
+        </div>
+        <div>
+          <label for="note">备注（可选）</label>
+          <textarea id="note" maxlength="300" placeholder="例如：已经在楼下 / 大概几点到"></textarea>
+        </div>
+        <button id="submitBtn" class="btn" type="submit">提交申请</button>
+      </form>
+      <div class="hint">
+        提交后，申请会进入住户接收端页面。当前第一版不会自动给你弹出授权结果页，住户会在接收端中处理你的申请。
+      </div>
+    </section>
+
+    <section class="status-panel">
+      <div class="status-icon" id="statusIcon">●</div>
+      <div>
+        <div class="status-title">Request Status</div>
+        <div class="status-text muted" id="statusText">Ready</div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+      authDomain: "door-control-1fb5a.firebaseapp.com",
+      databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
+      projectId: "door-control-1fb5a",
+      storageBucket: "door-control-1fb5a.firebasestorage.app",
+      messagingSenderId: "594532135937",
+      appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const requestForm = document.getElementById("requestForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const nameInput = document.getElementById("name");
+    const contactInput = document.getElementById("contact");
+    const reasonInput = document.getElementById("reason");
+    const noteInput = document.getElementById("note");
+    const statusText = document.getElementById("statusText");
+    const statusIcon = document.getElementById("statusIcon");
+
+    function setStatus(message, type = "muted") {
+      statusText.textContent = message;
+      statusText.className = `status-text ${type}`;
+      statusIcon.textContent =
+        type === "ok" ? "✓" :
+        type === "err" ? "!" :
+        type === "warn" ? "•" : "●";
+    }
+
+    function clean(value) {
+      return String(value || "").trim();
+    }
+
+    requestForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const name = clean(nameInput.value);
+      const contact = clean(contactInput.value);
+      const reason = clean(reasonInput.value);
+      const note = clean(noteInput.value);
+
+      if (!name || !contact || !reason) {
+        setStatus("请先完整填写姓名、联系方式和来访原因。", "err");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      setStatus("正在提交申请…", "warn");
+
+      try {
+        const listRef = ref(db, "temporaryAccessRequests");
+        const newRef = push(listRef);
+        const requestId = newRef.key;
+
+        await set(newRef, {
+          name,
+          contact,
+          reason,
+          note,
+          status: "pending",
+          createdAt: Date.now(),
+          reviewMode: "resident_any",
+          source: "public_form",
+          approvedBy: "",
+          approvedAt: 0,
+          rejectedBy: "",
+          rejectedAt: 0,
+          result: {
+            type: "",
+            expiresAt: 0
+          }
+        });
+
+        requestForm.reset();
+        setStatus(`申请已提交，编号：${requestId}。请等待住户处理。`, "ok");
+      } catch (error) {
+        console.error(error);
+        setStatus("提交失败。请检查 Firebase Rules 是否已更新。", "err");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
