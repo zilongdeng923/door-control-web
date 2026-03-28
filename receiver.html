@@ -346,7 +346,7 @@
         const status = item?.status || "pending";
         const canAct = status === "pending";
         const grantLink = item?.grantToken
-          ? `./guest-access_rebuilt.html?grant=${encodeURIComponent(item.grantToken)}`
+          ? `./guest-access.html?grant=${encodeURIComponent(item.grantToken)}`
           : "";
         return `
           <div class="request-item">
