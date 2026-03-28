@@ -72,7 +72,7 @@
       background: var(--panel); border:1px solid var(--border); border-radius:30px;
       backdrop-filter: blur(20px); box-shadow: var(--shadow);
     }
-    .login-panel, .account-panel, .status-panel, .button-panel { padding:16px; }
+    .login-panel, .account-panel, .status-panel, .button-panel, .nav-panel { padding:16px; }
     #appSection { display:flex; flex-direction:column; gap:14px; }
     .account-panel { display:flex; gap:14px; align-items:center; }
     .avatar {
@@ -90,11 +90,19 @@
     .btn:active { transform: scale(0.985); }
     .btn:disabled { opacity:.64; cursor:not-allowed; filter:saturate(.7); }
 
-    .btn-login {
+    .btn-login, .nav-btn {
       padding:18px; border-radius:20px; font-size:18px; font-weight:700; color:white;
       background: linear-gradient(135deg, rgba(37,99,235,0.96), rgba(96,165,250,0.94));
       box-shadow: 0 14px 32px rgba(37,99,235,0.32);
+      text-decoration:none; display:block; text-align:center;
     }
+    .nav-grid { display:grid; gap:12px; }
+    .nav-btn.secondary {
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)), rgba(12,20,40,0.46);
+      border:1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.20);
+    }
+    .nav-btn .sub { display:block; margin-top:6px; font-size:11px; font-weight:500; color:rgba(255,255,255,0.78); }
 
     .primary-row { display:flex; gap:12px; align-items:stretch; }
     .btn-open {
@@ -202,6 +210,19 @@
     <section class="space"></section>
 
     <section class="controls">
+      <section class="panel nav-panel" style="margin-bottom:14px;">
+        <div class="nav-grid">
+          <a class="nav-btn secondary" href="./request_rebuilt.html">
+            临时访问申请
+            <span class="sub">无需登录即可提交来访申请</span>
+          </a>
+          <a class="nav-btn secondary" href="./receiver_rebuilt.html">
+            接收端
+            <span class="sub">住户处理临时访问与访客开门请求</span>
+          </a>
+        </div>
+      </section>
+
       <section id="loginSection" class="panel login-panel">
         <button id="loginBtn" class="btn btn-login">使用 Google 登录</button>
       </section>
@@ -340,12 +361,7 @@
       logoutBtn.classList.remove("hidden");
       userEmail.textContent = user.email || "Unknown user";
       avatar.textContent = (user.email?.[0] || "U").toUpperCase();
-
-      if (user.uid === ADMIN_UID) {
-        debugBtn.classList.remove("hidden");
-      } else {
-        debugBtn.classList.add("hidden");
-      }
+      debugBtn.classList.toggle("hidden", user.uid !== ADMIN_UID);
     }
 
     function loadAutoHangupPreference() {
@@ -391,17 +407,11 @@
     async function sendCommand(commandName, extra = {}) {
       const user = auth.currentUser;
       if (!user) throw new Error("not_logged_in");
-
       const cmdRef = ref(db, `commands/${commandName}`);
       const snap = await get(cmdRef);
       const cur = snap.val();
-
-      if (cur?.pending === true) {
-        throw new Error("command_busy");
-      }
-
+      if (cur?.pending === true) throw new Error("command_busy");
       const requestId = `${commandName}_${Date.now()}`;
-
       await set(cmdRef, {
         pending: true,
         requestId,
@@ -409,7 +419,6 @@
         requestedBy: user.uid,
         ...extra
       });
-
       return requestId;
     }
 
@@ -459,11 +468,7 @@
         localBusyGuard = true;
         updateButtonsFromDeviceState(latestDeviceState || {});
         const callActive = !!latestDeviceState?.callActive;
-        if (callActive) {
-          await sendCommand("hangup");
-        } else {
-          await sendCommand("pickup");
-        }
+        await sendCommand(callActive ? "hangup" : "pickup");
       } catch (err) {
         console.error(err);
         setStatus("发送接听/挂机指令失败。", "err");
@@ -496,11 +501,8 @@
     });
 
     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setLoggedInUI(user);
-      } else {
-        setLoggedOutUI();
-      }
+      if (user) setLoggedInUI(user);
+      else setLoggedOutUI();
     });
 
     onValue(ref(db, "deviceState"), (snapshot) => {
