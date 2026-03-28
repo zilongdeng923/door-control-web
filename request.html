@@ -183,7 +183,7 @@
         if (status === "approved" && data.grantToken) {
           setStatus("申请已通过，正在跳转到临时访问页面…", "ok");
           setTimeout(() => {
-            window.location.href = `./guest-access_rebuilt.html?grant=${encodeURIComponent(data.grantToken)}`;
+            window.location.href = `./guest-access.html?grant=${encodeURIComponent(data.grantToken)}`;
           }, 600);
           return;
         }
