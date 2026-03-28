@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>临时访问</title>
+  <meta name="theme-color" content="#0b1226" />
+  <style>
+    :root {
+      --bg:#0b1226; --text:#eef4ff; --muted:#a9bad7; --ok:#c8f7d7; --err:#ffd2d2; --warn:#ffe7ad;
+      --panel:rgba(9,15,30,0.42); --border:rgba(255,255,255,0.08); --shadow:0 24px 60px rgba(0,0,0,0.42);
+      --blue1:rgba(37,99,235,0.96); --blue2:rgba(59,130,246,0.94);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; min-height:100%; font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+    body {
+      min-height:100vh; display:flex; justify-content:center; padding:24px 18px;
+      background:
+        radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),
+        radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%);
+    }
+    .wrap { width:100%; max-width:480px; }
+    .hero { text-align:center; margin-bottom:18px; }
+    .title { margin:0 0 10px; font-size:42px; font-weight:800; letter-spacing:-0.04em; }
+    .sub { margin:0; color:var(--muted); line-height:1.75; }
+    .card {
+      background:var(--panel); border:1px solid var(--border); border-radius:28px; padding:18px;
+      backdrop-filter:blur(20px); box-shadow:var(--shadow); margin-bottom:14px;
+    }
+    .big {
+      font-size:36px; font-weight:800; line-height:1.1; margin:10px 0 4px;
+    }
+    .muted { color:var(--muted); }
+    .ok { color:var(--ok); } .err { color:var(--err); } .warn { color:var(--warn); }
+    .btn {
+      width:100%; border:none; cursor:pointer; color:#fff; padding:18px; border-radius:20px; font-size:18px; font-weight:700;
+      background: linear-gradient(135deg, var(--blue1), var(--blue2)); box-shadow: 0 14px 32px rgba(37,99,235,0.32);
+    }
+    .btn:disabled { opacity:.64; cursor:not-allowed; }
+    .status { line-height:1.75; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1 class="title">临时访问</h1>
+      <p class="sub">这是审核通过后分配给你的独立临时访问页面。到期后会自动失效。</p>
+    </section>
+
+    <section class="card">
+      <div class="muted">状态</div>
+      <div id="stateText" class="big">加载中…</div>
+      <div id="remainText" class="status muted">正在读取授权信息。</div>
+    </section>
+
+    <section class="card">
+      <button id="openReqBtn" class="btn" disabled>请求开门</button>
+      <div id="actionStatus" class="status muted" style="margin-top:12px;">接收端在线时，会把你的请求中转为真正的开门指令。</div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+      authDomain: "door-control-1fb5a.firebaseapp.com",
+      databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
+      projectId: "door-control-1fb5a",
+      storageBucket: "door-control-1fb5a.firebasestorage.app",
+      messagingSenderId: "594532135937",
+      appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const grantToken = params.get("grant") || "";
+
+    const stateText = document.getElementById("stateText");
+    const remainText = document.getElementById("remainText");
+    const actionStatus = document.getElementById("actionStatus");
+    const openReqBtn = document.getElementById("openReqBtn");
+
+    let currentGrant = null;
+    let timer = null;
+
+    function fmtRemain(ms) {
+      const sec = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m} 分 ${s} 秒`;
+    }
+
+    function renderGrant() {
+      if (!grantToken) {
+        stateText.textContent = "无效链接";
+        remainText.textContent = "缺少 grant 参数。";
+        openReqBtn.disabled = true;
+        return;
+      }
+
+      if (!currentGrant) {
+        stateText.textContent = "未找到授权";
+        remainText.textContent = "该临时访问链接不存在或已失效。";
+        openReqBtn.disabled = true;
+        return;
+      }
+
+      const now = Date.now();
+      const expired = (currentGrant.expiresAt || 0) <= now;
+      const used = !!currentGrant.used;
+      const active = currentGrant.status === "active" && !expired && !used;
+
+      if (used) {
+        stateText.textContent = "已使用";
+        remainText.textContent = "这次临时访问已经完成。";
+        openReqBtn.disabled = true;
+        return;
+      }
+
+      if (expired || currentGrant.status === "expired") {
+        stateText.textContent = "已过期";
+        remainText.textContent = "授权时间已结束。";
+        openReqBtn.disabled = true;
+        return;
+      }
+
+      if (active) {
+        stateText.textContent = "有效";
+        remainText.textContent = `剩余时间：${fmtRemain(currentGrant.expiresAt - now)}`;
+        openReqBtn.disabled = false;
+        return;
+      }
+
+      stateText.textContent = currentGrant.status || "未知";
+      remainText.textContent = "当前授权状态不可用。";
+      openReqBtn.disabled = true;
+    }
+
+    if (grantToken) {
+      onValue(ref(db, `temporaryAccessGrants/${grantToken}`), (snapshot) => {
+        currentGrant = snapshot.val();
+        renderGrant();
+      }, (error) => {
+        console.error(error);
+        stateText.textContent = "读取失败";
+        remainText.textContent = "无法读取授权信息。";
+      });
+
+      timer = setInterval(renderGrant, 1000);
+    } else {
+      renderGrant();
+    }
+
+    openReqBtn.addEventListener("click", async () => {
+      if (!grantToken || !currentGrant) return;
+
+      try {
+        const reqRef = ref(db, `guestDoorRequests/${grantToken}`);
+        const existing = await get(reqRef);
+        const now = Date.now();
+        const expired = (currentGrant.expiresAt || 0) <= now;
+        const used = !!currentGrant.used;
+
+        if (expired || used || currentGrant.status !== "active") {
+          actionStatus.textContent = "当前授权已不可用。";
+          return;
+        }
+
+        if (existing.exists() && existing.val()?.status === "pending") {
+          actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
+          return;
+        }
+
+        await set(reqRef, {
+          createdAt: now,
+          status: "pending",
+          processedAt: 0
+        });
+
+        actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
+      } catch (error) {
+        console.error(error);
+        actionStatus.textContent = "提交开门请求失败。";
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (timer) clearInterval(timer);
+    });
+  </script>
+</body>
+</html>
