@@ -208,7 +208,6 @@
   <main class="app">
     <section class="hero">
       <div class="top-actions">
-        <a id="requestLink" class="icon-link hidden" href="./request.html" title="临时访问申请">✉</a>
         <a id="receiverLink" class="icon-link hidden" href="./receiver.html" title="接收端">📥</a>
       </div>
       <div class="chips">
@@ -228,6 +227,7 @@
       
 
       <section id="loginSection" class="panel login-panel">
+        <a id="guestApplyBtn" class="btn nav-btn secondary" href="./request.html" style="margin-bottom:12px;">申请临时访问<span class="sub">无需登录，提交申请后等待住户审批</span></a>
         <button id="loginBtn" class="btn btn-login">使用 Google 登录</button>
       </section>
 
@@ -337,7 +337,6 @@
     const avatar = document.getElementById("avatar");
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
-    const requestLink = document.getElementById("requestLink");
     const receiverLink = document.getElementById("receiverLink");
 
     let latestDeviceState = null;
@@ -353,7 +352,6 @@
     }
 
     function syncTopActions(user, role) {
-      requestLink.classList.toggle("hidden", !!user);
       const canSeeReceiver = !!user && (user.uid === ADMIN_UID || role === "resident" || role === "owner");
       receiverLink.classList.toggle("hidden", !canSeeReceiver);
     }

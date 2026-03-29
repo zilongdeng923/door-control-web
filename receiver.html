@@ -12,15 +12,32 @@
       --panel:rgba(9,15,30,0.42); --border:rgba(255,255,255,0.08); --shadow:0 24px 60px rgba(0,0,0,0.42);
       --blue1:rgba(37,99,235,0.96); --blue2:rgba(59,130,246,0.94);
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent} html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
     body{padding:24px 18px;background:radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%)}
-    .wrap{max-width:980px;margin:0 auto}.title{font-size:38px;font-weight:800;margin:0 0 8px}.sub{margin:0 0 18px;color:var(--muted);line-height:1.7}.card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:18px;backdrop-filter:blur(18px);box-shadow:var(--shadow);margin-bottom:16px}.row{display:flex;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.status{line-height:1.7;white-space:pre-wrap}.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}.muted{color:var(--muted)} label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px} input,select{width:100%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--text);font-size:15px} button,a.btn{border:none;border-radius:16px;padding:12px 16px;cursor:pointer;font-weight:700;color:white;background:linear-gradient(135deg,var(--blue1),var(--blue2));text-decoration:none;display:inline-block}.secondary{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)}.danger{background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.22)}.request{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}.request h4{margin:0 0 8px;font-size:18px}.meta{font-size:13px;color:var(--muted);line-height:1.6}.empty{color:var(--muted)}
+    .wrap{max-width:980px;margin:0 auto}
+    .title{font-size:38px;font-weight:800;margin:0 0 8px}
+    .sub{margin:0 0 18px;color:var(--muted);line-height:1.7}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:18px;backdrop-filter:blur(18px);box-shadow:var(--shadow);margin-bottom:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+    .status{line-height:1.7;white-space:pre-wrap}
+    .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)} .muted{color:var(--muted)}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select{width:100%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--text);font-size:15px}
+    button,a.btn{border:none;border-radius:16px;padding:12px 16px;cursor:pointer;font-weight:700;color:white;background:linear-gradient(135deg,var(--blue1),var(--blue2));text-decoration:none;display:inline-block}
+    .secondary{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)}
+    .danger{background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.22)}
+    .request{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}
+    .request h4{margin:0 0 8px;font-size:18px}
+    .meta{font-size:13px;color:var(--muted);line-height:1.6}
+    .empty{color:var(--muted)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1 class="title">Door Control Receiver</h1>
-    <p class="sub">住户接收端。审批临时访问申请，并自动处理中转的访客开门请求。</p>
+    <p class="sub">住户接收端。用于审批临时访问申请；临时开门请求将由设备直接处理。</p>
 
     <div class="card">
       <div id="authInfo" class="status">正在验证身份…</div>
@@ -52,7 +69,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -78,15 +95,12 @@
     const requestsBox = document.getElementById("requestsBox");
     const logBox = document.getElementById("logBox");
 
-    let latestDeviceState = null;
-    const processingGrantTokens = new Set();
-
     function log(msg, type = "muted") {
       logBox.className = `status ${type}`;
       logBox.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
     }
 
-    function randomToken(len = 36) {
+    function randomToken(len = 40) {
       const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       let out = "";
       const arr = crypto.getRandomValues(new Uint8Array(len));
@@ -100,7 +114,6 @@
     }
 
     function renderDeviceState(state) {
-      latestDeviceState = state || null;
       if (!state) {
         deviceStateBox.textContent = "未读取到设备状态。";
         return;
@@ -127,24 +140,6 @@
       return !!user && (user.uid === ADMIN_UID || meta.canReviewTemporaryAccess === true);
     }
 
-    async function sendOpenCommand() {
-      const user = auth.currentUser;
-      if (!user) throw new Error("not_logged_in");
-      const cmdRef = ref(db, "commands/open");
-      const snap = await get(cmdRef);
-      const cur = snap.val();
-      if (cur?.pending === true) throw new Error("command_busy");
-      const requestId = `open_${Date.now()}`;
-      await set(cmdRef, {
-        pending: true,
-        requestId,
-        requestedAt: Date.now(),
-        requestedBy: user.uid,
-        autoHangup: true
-      });
-      return requestId;
-    }
-
     async function approveRequest(reqId, reqData, durationValue, durationUnit, maxUses) {
       const user = auth.currentUser;
       if (!user) return;
@@ -153,6 +148,7 @@
       const expiresAt = now + ttlMs;
       const grantToken = randomToken(40);
       const updates = {};
+
       updates[`temporaryAccessRequests/${reqId}/status`] = "approved";
       updates[`temporaryAccessRequests/${reqId}/approvedBy`] = user.uid;
       updates[`temporaryAccessRequests/${reqId}/approvedAt`] = now;
@@ -272,112 +268,6 @@
       }
     }
 
-    async function markGuestRequest(grantToken, patch) {
-      await update(ref(db, `guestDoorRequests/${grantToken}`), patch);
-    }
-
-    async function tryProcessGuestRequest(grantToken) {
-      const user = auth.currentUser;
-      if (!user || processingGrantTokens.has(grantToken)) return;
-      processingGrantTokens.add(grantToken);
-      try {
-        const reqRef = ref(db, `guestDoorRequests/${grantToken}`);
-        const lockResult = await runTransaction(reqRef, (current) => {
-          if (!current || current.status !== "pending") return;
-          return {
-            ...current,
-            status: "processing",
-            processorUid: user.uid,
-            message: "processing",
-            processedAt: 0
-          };
-        });
-        if (!lockResult.committed) return;
-
-        const device = latestDeviceState;
-        const online = !!device?.online && (Date.now() - (device?.lastSeen || 0) < 10000);
-        const busy = !!device?.busy;
-        if (!online || busy) {
-          await markGuestRequest(grantToken, {
-            status: "pending",
-            processorUid: "",
-            message: !online ? "device_offline" : "device_busy",
-            processedAt: 0
-          });
-          return;
-        }
-
-        const grantSnap = await get(ref(db, `temporaryAccessGrants/${grantToken}`));
-        const grant = grantSnap.val();
-        const now = Date.now();
-        const valid = !!grant && grant.status === "active" && (grant.expiresAt || 0) > now && (grant.remainingUses || 0) > 0;
-        if (!valid) {
-          await markGuestRequest(grantToken, {
-            status: "rejected",
-            message: "grant_invalid",
-            processedAt: now
-          });
-          return;
-        }
-
-        let commandRequestId = "";
-        try {
-          commandRequestId = await sendOpenCommand();
-        } catch (error) {
-          await markGuestRequest(grantToken, {
-            status: "pending",
-            processorUid: "",
-            message: error?.message || "command_failed",
-            processedAt: 0
-          });
-          return;
-        }
-
-        const grantRef = ref(db, `temporaryAccessGrants/${grantToken}`);
-        const grantTxn = await runTransaction(grantRef, (current) => {
-          const curNow = Date.now();
-          if (!current) return;
-          if (current.status !== "active") return;
-          if ((current.expiresAt || 0) <= curNow) {
-            return { ...current, status: "expired", used: current.used || false };
-          }
-          if ((current.remainingUses || 0) <= 0) {
-            return { ...current, status: "used", used: true, usedAt: current.usedAt || curNow, remainingUses: 0 };
-          }
-          const nextRemaining = Math.max(0, (current.remainingUses || 0) - 1);
-          return {
-            ...current,
-            remainingUses: nextRemaining,
-            used: nextRemaining === 0,
-            status: nextRemaining === 0 ? "used" : "active",
-            usedAt: nextRemaining === 0 ? curNow : (current.usedAt || 0)
-          };
-        });
-
-        if (!grantTxn.committed) {
-          await markGuestRequest(grantToken, {
-            status: "rejected",
-            message: "grant_update_failed",
-            processedAt: Date.now()
-          });
-          return;
-        }
-
-        await markGuestRequest(grantToken, {
-          status: "processed",
-          requestId: commandRequestId,
-          processedAt: Date.now(),
-          message: "opened"
-        });
-        log(`已处理访客开门请求 ${grantToken.slice(0, 8)}…`, "ok");
-      } catch (error) {
-        console.error(error);
-        log(`处理访客请求失败：${grantToken.slice(0, 8)}…`, "err");
-      } finally {
-        processingGrantTokens.delete(grantToken);
-      }
-    }
-
     loginBtn.addEventListener("click", async () => {
       try {
         await signInWithPopup(auth, provider);
@@ -414,12 +304,6 @@
       const reviewAllowed = canReview(meta, user);
       onValue(ref(db, "temporaryAccessRequests"), (snap) => {
         renderRequests(snap.val(), reviewAllowed);
-      });
-      onValue(ref(db, "guestDoorRequests"), (snap) => {
-        const data = snap.val() || {};
-        Object.entries(data).forEach(([grantToken, req]) => {
-          if (req?.status === "pending") tryProcessGuestRequest(grantToken);
-        });
       });
     });
   </script>

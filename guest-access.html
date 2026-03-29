@@ -55,7 +55,7 @@
 
     <section class="card">
       <button id="openReqBtn" class="btn" disabled>请求开门</button>
-      <div id="actionStatus" class="status muted" style="margin-top:12px;">接收端在线时，会把你的请求中转为真正的开门指令。</div>
+      <div id="actionStatus" class="status muted" style="margin-top:12px;">设备会直接处理你的临时开门请求，不再依赖接收端常驻中转。</div>
     </section>
     <section class="card">
       <button id="newRequestBtn" class="btn" style="background: rgba(255,255,255,0.08); box-shadow:none; border:1px solid rgba(255,255,255,0.10);">提交新的申请</button>
@@ -93,8 +93,10 @@
     const newRequestBtn = document.getElementById("newRequestBtn");
 
     let currentGrant = null;
+    let currentRequest = null;
     let timer = null;
     let grantUnsubscribe = null;
+    let requestUnsubscribe = null;
     let grantToken = "";
 
     function storeGrantToken(token) {
@@ -185,6 +187,35 @@
       openReqBtn.disabled = true;
     }
 
+    function renderRequestStatus() {
+      if (!currentRequest) return;
+      const status = currentRequest.status || "";
+      const message = currentRequest.message || "";
+      if (status === "pending") {
+        actionStatus.textContent = "开门请求已提交，设备正在等待处理。";
+        return;
+      }
+      if (status === "processing") {
+        actionStatus.textContent = "设备正在执行开门动作，请稍等。";
+        return;
+      }
+      if (status === "processed") {
+        actionStatus.textContent = "门禁请求已处理完成。";
+        return;
+      }
+      if (status === "rejected") {
+        if (message === "grant_invalid") {
+          actionStatus.textContent = "授权已失效，请重新提交申请。";
+        } else if (message === "device_busy") {
+          actionStatus.textContent = "设备正忙，请稍后再试。";
+        } else if (message === "device_offline") {
+          actionStatus.textContent = "设备当前离线，请稍后再试。";
+        } else {
+          actionStatus.textContent = "这次开门请求未成功，请再试一次。";
+        }
+      }
+    }
+
     function startGrantListener() {
       grantToken = normalizeGrantToken();
       if (!grantToken) {
@@ -193,6 +224,8 @@
       }
 
       if (grantUnsubscribe) grantUnsubscribe();
+      if (requestUnsubscribe) requestUnsubscribe();
+
       grantUnsubscribe = onValue(ref(db, `temporaryAccessGrants/${grantToken}`), (snapshot) => {
         currentGrant = snapshot.val();
         renderGrant();
@@ -201,6 +234,13 @@
         stateText.textContent = "读取失败";
         remainText.textContent = "无法读取授权信息。";
         openReqBtn.disabled = true;
+      });
+
+      requestUnsubscribe = onValue(ref(db, `guestDoorRequests/${grantToken}`), (snapshot) => {
+        currentRequest = snapshot.val();
+        renderRequestStatus();
+      }, (error) => {
+        console.error(error);
       });
 
       if (timer) clearInterval(timer);
@@ -230,7 +270,7 @@
           message: "waiting"
         });
 
-        actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
+        actionStatus.textContent = "开门请求已提交，设备正在等待处理。";
       } catch (error) {
         console.error(error);
         actionStatus.textContent = "提交开门请求失败。";
@@ -244,6 +284,7 @@
     window.addEventListener("beforeunload", () => {
       if (timer) clearInterval(timer);
       if (grantUnsubscribe) grantUnsubscribe();
+      if (requestUnsubscribe) requestUnsubscribe();
     });
   </script>
 </body>
