@@ -213,6 +213,7 @@
 
         const reqRef = push(ref(db, "temporaryAccessRequests"));
         const sessionToken = randomToken(28);
+        const now = Date.now();
 
         await set(reqRef, {
           name,
@@ -220,7 +221,7 @@
           reason,
           note,
           status: "pending",
-          createdAt: Date.now(),
+          createdAt: now,
           reviewMode: "resident_any",
           source: "public_form",
           approvedBy: "",
@@ -231,15 +232,16 @@
             type: "",
             expiresAt: 0
           },
-          sessionToken
+          sessionToken,
+          grantToken: ""
         });
 
         await set(ref(db, `temporaryRequestSessions/${sessionToken}`), {
           requestId: reqRef.key,
           status: "pending",
-          createdAt: Date.now(),
+          createdAt: now,
           grantToken: "",
-          updatedAt: Date.now()
+          updatedAt: now
         });
 
         storeSessionToken(sessionToken);
