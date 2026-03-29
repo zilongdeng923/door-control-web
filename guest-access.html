@@ -61,7 +61,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -161,23 +161,20 @@
       if (!grantToken || !currentGrant) return;
 
       try {
-        const reqRef = ref(db, `guestDoorRequests/${grantToken}`);
         const now = Date.now();
         const expired = (currentGrant.expiresAt || 0) <= now;
         const noUsesLeft = (currentGrant.remainingUses || 0) <= 0;
-        
+
         if (expired || noUsesLeft || currentGrant.status !== "active") {
           actionStatus.textContent = "当前授权已不可用。";
           return;
         }
-        
-        await set(reqRef, {
+
+        await set(ref(db, `guestDoorRequests/${grantToken}`), {
           createdAt: now,
           status: "pending",
           processedAt: 0
         });
-        
-        actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
 
         actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
       } catch (error) {
