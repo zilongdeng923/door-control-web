@@ -145,9 +145,9 @@
       const snap = await get(ref(db, `users/${uid}`));
       return snap.val() || {};
     }
-
+    
     function canEnter(role, user) {
-      return !!user && (user.uid === ADMIN_UID || role === "owner" || role === "resident");
+      return !!user && (user.uid === ADMIN_UID || role === "admin" || role === "resident");
     }
 
     function canReview(meta, user) {
@@ -215,6 +215,12 @@
         expiresAt,
         status: "active"
       };
+      
+      if (req.type === "resident_join" && req.uid) {
+        updates[`users/${req.uid}/role`] = "resident";
+        updates[`users/${req.uid}/displayName`] = req.displayName || req.email || "Resident";
+        updates[`users/${req.uid}/canReviewTemporaryAccess`] = true;
+      }
 
       updates[`userAccess/${req.uid}`] = {
         membershipActive: true,
