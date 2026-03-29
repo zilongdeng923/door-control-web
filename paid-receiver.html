@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会员审批后台</title>
+  <meta name="theme-color" content="#0b1226" />
+  <style>
+    :root {
+      --bg:#0b1226; --text:#eef4ff; --muted:#a9bad7; --muted2:#91a4c6;
+      --ok:#c8f7d7; --err:#ffd2d2; --warn:#ffe7ad;
+      --panel:rgba(9,15,30,0.42); --border:rgba(255,255,255,0.08); --shadow:0 24px 60px rgba(0,0,0,0.42);
+      --blue1:rgba(37,99,235,0.96); --blue2:rgba(59,130,246,0.94);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+    body{padding:24px 18px;background:radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%)}
+    .wrap{max-width:1100px;margin:0 auto}
+    .title{font-size:38px;font-weight:800;margin:0 0 8px}
+    .sub{margin:0 0 18px;color:var(--muted);line-height:1.7}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:18px;backdrop-filter:blur(18px);box-shadow:var(--shadow);margin-bottom:16px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+    .status{line-height:1.7;white-space:pre-wrap}
+    .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)} .muted{color:var(--muted)}
+    button,a.btn{border:none;border-radius:16px;padding:12px 16px;cursor:pointer;font-weight:700;color:white;background:linear-gradient(135deg,var(--blue1),var(--blue2));text-decoration:none;display:inline-block}
+    .secondary{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)}
+    .danger{background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.22)}
+    .request{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}
+    .request h4{margin:0 0 8px;font-size:18px}
+    .meta{font-size:13px;color:var(--muted);line-height:1.7}
+    .empty{color:var(--muted)}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-bottom:10px}
+    .pill.pending{background:rgba(255,231,173,0.16);color:var(--warn)}
+    .pill.approved_waiting_payment{background:rgba(255,231,173,0.16);color:var(--warn)}
+    .pill.paid{background:rgba(200,247,215,0.14);color:var(--ok)}
+    .pill.rejected,.pill.expired,.pill.cancelled{background:rgba(255,210,210,0.14);color:var(--err)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">会员审批后台</h1>
+    <p class="sub">流程为：申请 → 审批通过 → 等待付款 → 手动确认已付款 → 自动发放会员授权。</p>
+
+    <div class="card">
+      <div id="authInfo" class="status">正在验证身份…</div>
+      <div class="row" style="margin-top:12px;">
+        <button id="loginBtn">使用 Google 登录</button>
+        <button id="logoutBtn" class="secondary" style="display:none;">退出登录</button>
+        <a class="btn secondary" href="./index.html">返回首页</a>
+      </div>
+    </div>
+
+    <div id="mainArea" style="display:none;">
+      <div class="card">
+        <h3>待审批申请</h3>
+        <div id="pendingBox" class="grid"></div>
+      </div>
+
+      <div class="card">
+        <h3>待付款确认</h3>
+        <div id="waitingPaymentBox" class="grid"></div>
+      </div>
+
+      <div class="card">
+        <h3>已处理记录</h3>
+        <div id="historyBox" class="grid"></div>
+      </div>
+
+      <div class="card">
+        <h3>日志</h3>
+        <div id="logBox" class="status muted">Ready</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+      authDomain: "door-control-1fb5a.firebaseapp.com",
+      databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
+      projectId: "door-control-1fb5a",
+      storageBucket: "door-control-1fb5a.firebasestorage.app",
+      messagingSenderId: "594532135937",
+      appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+    };
+
+    const ADMIN_UID = "Mkcg6WPhneTMfmJmbUBD5h9Dpbb2";
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    const authInfo = document.getElementById("authInfo");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const mainArea = document.getElementById("mainArea");
+    const pendingBox = document.getElementById("pendingBox");
+    const waitingPaymentBox = document.getElementById("waitingPaymentBox");
+    const historyBox = document.getElementById("historyBox");
+    const logBox = document.getElementById("logBox");
+
+    function log(msg, type = "muted") {
+      logBox.className = `status ${type}`;
+      logBox.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return "-";
+      return new Date(ts).toLocaleString();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      }[ch]));
+    }
+
+    function penceToPounds(pence) {
+      return `£${((Number(pence) || 0) / 100).toFixed(2)}`;
+    }
+
+    function randomToken(len = 40) {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let out = "";
+      const arr = crypto.getRandomValues(new Uint8Array(len));
+      for (const n of arr) out += chars[n % chars.length];
+      return out;
+    }
+
+    function statusClass(status) {
+      if (status === "paid") return "paid";
+      if (status === "approved_waiting_payment") return "approved_waiting_payment";
+      if (status === "rejected") return "rejected";
+      if (status === "expired") return "expired";
+      if (status === "cancelled") return "cancelled";
+      return "pending";
+    }
+
+    async function loadUserMeta(uid) {
+      const snap = await get(ref(db, `users/${uid}`));
+      return snap.val() || {};
+    }
+
+    function canEnter(role, user) {
+      return !!user && (user.uid === ADMIN_UID || role === "owner" || role === "resident");
+    }
+
+    function canReview(meta, user) {
+      return !!user && (user.uid === ADMIN_UID || meta.canReviewPaidAccess === true);
+    }
+
+    async function approveRequest(reqId, req) {
+      const user = auth.currentUser;
+      if (!user) return;
+      const now = Date.now();
+
+      const updates = {};
+      updates[`paidAccessRequests/${reqId}/status`] = "approved_waiting_payment";
+      updates[`paidAccessRequests/${reqId}/approvedBy`] = user.uid;
+      updates[`paidAccessRequests/${reqId}/approvedAt`] = now;
+      updates[`paidAccessRequests/${reqId}/checkout/provider`] = "manual_v1";
+      updates[`paidAccessRequests/${reqId}/checkout/status`] = "waiting_manual_payment";
+
+      await update(ref(db), updates);
+      log(`已批准会员申请 ${reqId}，等待付款。`, "warn");
+    }
+
+    async function rejectRequest(reqId) {
+      const user = auth.currentUser;
+      if (!user) return;
+      const now = Date.now();
+
+      const updates = {};
+      updates[`paidAccessRequests/${reqId}/status`] = "rejected";
+      updates[`paidAccessRequests/${reqId}/rejectedBy`] = user.uid;
+      updates[`paidAccessRequests/${reqId}/rejectedAt`] = now;
+      await update(ref(db), updates);
+      log(`已拒绝会员申请 ${reqId}。`, "err");
+    }
+
+    async function confirmPaid(reqId, req) {
+      const user = auth.currentUser;
+      if (!user) return;
+      const now = Date.now();
+      const grantId = randomToken(40);
+
+      const startsAt = now;
+      const expiresAt = req.type === "resident_join"
+        ? now + 3650 * 24 * 60 * 60 * 1000
+        : now + Math.max(1, Number(req.plan?.days) || 1) * 24 * 60 * 60 * 1000;
+
+      const membershipType = req.type === "resident_join" ? "resident_join" : "membership";
+
+      const updates = {};
+      updates[`paidAccessRequests/${reqId}/status`] = "paid";
+      updates[`paidAccessRequests/${reqId}/paidAt`] = now;
+      updates[`paidAccessRequests/${reqId}/paymentConfirmedBy`] = user.uid;
+      updates[`paidAccessRequests/${reqId}/grantId`] = grantId;
+      updates[`paidAccessRequests/${reqId}/result/type`] = membershipType;
+      updates[`paidAccessRequests/${reqId}/result/startsAt`] = startsAt;
+      updates[`paidAccessRequests/${reqId}/result/expiresAt`] = expiresAt;
+      updates[`paidAccessRequests/${reqId}/checkout/status`] = "confirmed_manual_payment";
+
+      updates[`paidAccessGrants/${grantId}`] = {
+        uid: req.uid || "",
+        requestId: reqId,
+        type: membershipType,
+        createdAt: now,
+        startsAt,
+        expiresAt,
+        status: "active"
+      };
+
+      updates[`userAccess/${req.uid}`] = {
+        membershipActive: true,
+        membershipType,
+        paidGrantId: grantId,
+        paidUntil: expiresAt,
+        residentPending: false
+      };
+
+      await update(ref(db), updates);
+      log(`已确认付款并发放授权：${reqId}`, "ok");
+    }
+
+    function renderPending(entries, reviewAllowed) {
+      if (!entries.length) {
+        pendingBox.innerHTML = '<div class="empty">当前没有待审批的会员申请。</div>';
+        return;
+      }
+      pendingBox.innerHTML = "";
+      for (const [reqId, req] of entries) {
+        const card = document.createElement("div");
+        card.className = "request";
+        card.innerHTML = `
+          <div class="pill pending">待审批</div>
+          <h4>${escapeHtml(req.displayName || req.email || "未命名申请")}</h4>
+          <div class="meta">
+            账号：${escapeHtml(req.email || "-")}<br>
+            类型：${escapeHtml(req.type === "resident_join" ? "成为住户" : "普通会员")}<br>
+            天数：${escapeHtml(req.plan?.days || "-")}<br>
+            金额：${escapeHtml(penceToPounds(req.pricing?.amountPence || 0))}<br>
+            备注：${escapeHtml(req.copy?.note || "-")}<br>
+            提交时间：${fmtTime(req.createdAt)}
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <button data-action="approve">批准</button>
+            <button data-action="reject" class="danger">拒绝</button>
+          </div>
+        `;
+        const approveBtn = card.querySelector('[data-action="approve"]');
+        const rejectBtn = card.querySelector('[data-action="reject"]');
+        approveBtn.disabled = !reviewAllowed;
+        rejectBtn.disabled = !reviewAllowed;
+
+        approveBtn.addEventListener("click", async () => {
+          try {
+            await approveRequest(reqId, req);
+          } catch (error) {
+            console.error(error);
+            log(`批准会员申请 ${reqId} 失败。`, "err");
+          }
+        });
+
+        rejectBtn.addEventListener("click", async () => {
+          try {
+            await rejectRequest(reqId);
+          } catch (error) {
+            console.error(error);
+            log(`拒绝会员申请 ${reqId} 失败。`, "err");
+          }
+        });
+
+        pendingBox.appendChild(card);
+      }
+    }
+
+    function renderWaiting(entries, reviewAllowed) {
+      if (!entries.length) {
+        waitingPaymentBox.innerHTML = '<div class="empty">当前没有待确认付款的申请。</div>';
+        return;
+      }
+      waitingPaymentBox.innerHTML = "";
+      for (const [reqId, req] of entries) {
+        const card = document.createElement("div");
+        card.className = "request";
+        card.innerHTML = `
+          <div class="pill approved_waiting_payment">待付款确认</div>
+          <h4>${escapeHtml(req.displayName || req.email || "未命名申请")}</h4>
+          <div class="meta">
+            账号：${escapeHtml(req.email || "-")}<br>
+            类型：${escapeHtml(req.type === "resident_join" ? "成为住户" : "普通会员")}<br>
+            天数：${escapeHtml(req.plan?.days || "-")}<br>
+            金额：${escapeHtml(penceToPounds(req.pricing?.amountPence || 0))}<br>
+            批准时间：${fmtTime(req.approvedAt)}<br>
+            当前支付模式：手动确认
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <button data-action="confirm">确认已付款并生效</button>
+          </div>
+        `;
+        const confirmBtn = card.querySelector('[data-action="confirm"]');
+        confirmBtn.disabled = !reviewAllowed;
+        confirmBtn.addEventListener("click", async () => {
+          try {
+            await confirmPaid(reqId, req);
+          } catch (error) {
+            console.error(error);
+            log(`确认付款 ${reqId} 失败。`, "err");
+          }
+        });
+
+        waitingPaymentBox.appendChild(card);
+      }
+    }
+
+    function renderHistory(entries) {
+      if (!entries.length) {
+        historyBox.innerHTML = '<div class="empty">当前没有已处理的会员记录。</div>';
+        return;
+      }
+      historyBox.innerHTML = "";
+      for (const [reqId, req] of entries) {
+        const card = document.createElement("div");
+        card.className = "request";
+        const until = req.result?.expiresAt ? fmtTime(req.result.expiresAt) : "-";
+        card.innerHTML = `
+          <div class="pill ${statusClass(req.status || "unknown")}">${escapeHtml(req.status || "unknown")}</div>
+          <h4>${escapeHtml(req.displayName || req.email || "未命名申请")}</h4>
+          <div class="meta">
+            账号：${escapeHtml(req.email || "-")}<br>
+            类型：${escapeHtml(req.type === "resident_join" ? "成为住户" : "普通会员")}<br>
+            金额：${escapeHtml(penceToPounds(req.pricing?.amountPence || 0))}<br>
+            批准时间：${fmtTime(req.approvedAt)}<br>
+            拒绝时间：${fmtTime(req.rejectedAt)}<br>
+            付款确认时间：${fmtTime(req.paidAt)}<br>
+            grantId：${escapeHtml(req.grantId || "-")}<br>
+            生效到期：${escapeHtml(until)}
+          </div>
+        `;
+        historyBox.appendChild(card);
+      }
+    }
+
+    loginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error(error);
+        authInfo.textContent = "登录失败。";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        authInfo.textContent = "未登录。";
+        loginBtn.style.display = "";
+        logoutBtn.style.display = "none";
+        mainArea.style.display = "none";
+        return;
+      }
+
+      const meta = await loadUserMeta(user.uid);
+      const role = meta.role || "visitor";
+      const reviewAllowed = canReview(meta, user);
+
+      if (!canEnter(role, user)) {
+        authInfo.textContent = `已登录：${user.email || user.uid}\n权限不足，无法进入会员审批后台。`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "";
+        mainArea.style.display = "none";
+        return;
+      }
+
+      authInfo.textContent = `已登录：${user.email || user.uid}\n角色：${role}\n付费审批权限：${reviewAllowed ? "有" : "无"}`;
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "";
+      mainArea.style.display = "";
+
+      onValue(ref(db, "paidAccessRequests"), (snap) => {
+        const all = snap.val() || {};
+        const entries = Object.entries(all).sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
+        const pending = entries.filter(([, req]) => req.status === "pending");
+        const waiting = entries.filter(([, req]) => req.status === "approved_waiting_payment");
+        const history = entries.filter(([, req]) => req.status !== "pending" && req.status !== "approved_waiting_payment");
+
+        renderPending(pending, reviewAllowed);
+        renderWaiting(waiting, reviewAllowed);
+        renderHistory(history);
+      }, (error) => {
+        console.error(error);
+        log("监听会员申请失败。", "err");
+      });
+    });
+  </script>
+</body>
+</html>
