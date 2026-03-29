@@ -384,20 +384,21 @@
         type === "warn" ? "•" : "●";
     }
 
-    function syncTopActions(user, role, canReviewTemp = false, canReviewPaid = false) {
+    function syncTopActions(user, role, hasDoorAccess = false, canReviewTemp = false, canReviewPaid = false) {
       const canSeeReceiver = !!user && (
         user.uid === ADMIN_UID ||
         role === "admin" ||
         role === "resident" ||
-        canReviewTemp
+        canReviewTemp ||
+        hasDoorAccess
       );
-
+    
       const canSeePaidReceiver = !!user && (
         user.uid === ADMIN_UID ||
         role === "admin" ||
         canReviewPaid
       );
-
+    
       receiverLink.classList.toggle("hidden", !canSeeReceiver);
       paidReceiverLink.classList.toggle("hidden", !canSeePaidReceiver);
     }
