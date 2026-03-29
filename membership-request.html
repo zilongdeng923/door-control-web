@@ -14,7 +14,6 @@
       --glass:rgba(255,255,255,0.06);
       --glass-strong:rgba(255,255,255,0.10);
       --line:rgba(255,255,255,0.10);
-      --glow:rgba(120,184,255,0.28);
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
@@ -70,27 +69,14 @@
         0 0 0 1px rgba(255,255,255,0.03) inset,
         0 0 48px rgba(120,184,255,0.10);
       backdrop-filter: blur(26px);
+      margin-bottom: 16px;
     }
 
     .payment-hero {
       position: relative;
       padding: 22px 20px 18px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
-      background:
-        linear-gradient(135deg, rgba(37,99,235,0.22), rgba(59,130,246,0.06));
-    }
-
-    .payment-hero::after {
-      content: "";
-      position: absolute;
-      top: -20px;
-      right: -30px;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(160,210,255,0.22), rgba(160,210,255,0));
-      filter: blur(4px);
-      pointer-events: none;
+      background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(59,130,246,0.06));
     }
 
     .payment-kicker {
@@ -142,7 +128,6 @@
       line-height: 1;
       letter-spacing: -0.04em;
       color: #f4f8ff;
-      text-shadow: 0 0 18px rgba(160,210,255,0.14);
     }
 
     .amount-note {
@@ -151,7 +136,47 @@
       line-height: 1.7;
     }
 
-    .payment-body {
+    .payment-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 14px 18px 0;
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: #e8f1ff;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(37,99,235,0.55), rgba(59,130,246,0.26));
+      border-color: rgba(120,184,255,0.26);
+      box-shadow: 0 0 18px rgba(120,184,255,0.10);
+    }
+
+    .payment-carousel {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .payment-carousel::-webkit-scrollbar {
+      display: none;
+    }
+
+    .payment-page {
+      min-width: 100%;
+      scroll-snap-align: start;
       padding: 18px;
       display: grid;
       gap: 12px;
@@ -166,10 +191,6 @@
       border-radius: 20px;
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .bank-meta {
-      min-width: 0;
     }
 
     .bank-label {
@@ -202,12 +223,7 @@
       min-width: 84px;
     }
 
-    .copy-btn:hover {
-      background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
-    }
-
-    .transfer-note {
-      margin-top: 4px;
+    .transfer-note, .soft-panel {
       padding: 16px 18px;
       border-radius: 20px;
       background: rgba(255,255,255,0.04);
@@ -217,29 +233,81 @@
       font-size: 13px;
     }
 
-    .transfer-note strong {
-      color: #ecf4ff;
+    .transfer-note strong, .soft-panel strong {
+      color: #eef4ff;
       font-weight: 700;
     }
 
-    .payment-footer {
+    .qr-grid {
       display: grid;
-      gap: 10px;
-      margin-top: 2px;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
     }
 
-    .soft-panel {
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.04);
+    .qr-card {
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+    }
+
+    .qr-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #eef4ff;
+    }
+
+    .qr-frame {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      place-items: center;
+    }
+
+    .qr-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .qr-placeholder {
+      padding: 12px;
       color: var(--muted);
       font-size: 13px;
-      line-height: 1.75;
+      line-height: 1.7;
     }
 
-    .soft-panel strong {
-      color: #eef4ff;
+    .rate-line {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .pager-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 0 18px;
+    }
+
+    .pager-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.18);
+      transition: .2s ease;
+    }
+
+    .pager-dot.active {
+      width: 22px;
+      background: linear-gradient(135deg, rgba(37,99,235,0.92), rgba(96,165,250,0.92));
     }
 
     @media (max-width: 560px) {
@@ -247,6 +315,7 @@
       .bank-row { grid-template-columns: 1fr; }
       .copy-btn { width: 100%; }
       .amount-value { font-size: 34px; }
+      .qr-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -255,7 +324,7 @@
     <section class="hero">
       <div class="chips">
         <div class="chip">Member Support</div>
-        <div class="chip">Manual Transfer</div>
+        <div class="chip">Multi Payment</div>
       </div>
       <h1 class="title">会员申请</h1>
       <p class="sub">支持设备维护与长期使用权限。<br>审批通过后会显示你的付款信息窗口。</p>
@@ -313,83 +382,129 @@
     <section id="paymentPanel" class="payment-card" style="display:none;">
       <div class="payment-hero">
         <div class="payment-kicker">Payment Details</div>
-        <h2 class="payment-title">银行转账信息</h2>
+        <h2 class="payment-title">付款信息</h2>
         <p class="payment-sub">
-          你的申请已经通过审批。请按下方信息完成付款，管理员确认到账后会为你开通权限。
+          你的申请已经通过审批。你可以选择银行转账，或者使用微信 / 支付宝付款码完成付款。
         </p>
 
         <div class="amount-panel">
           <div class="amount-label">Amount due</div>
           <div id="paymentAmountValue" class="amount-value">£0.00</div>
-          <div id="paymentAmountNote" class="amount-note">请按英镑金额转账。</div>
+          <div id="paymentAmountNote" class="amount-note">正式价格以 GBP 为准。</div>
+          <div id="rateLine" class="rate-line">参考汇率加载中…</div>
         </div>
       </div>
 
-      <div class="payment-body">
-        <div class="bank-row">
-          <div class="bank-meta">
-            <div class="bank-label">Account holder</div>
-            <div class="bank-value">Zilong Deng</div>
+      <div class="payment-tabs">
+        <button id="tabBank" class="tab-btn active" type="button">银行转账</button>
+        <button id="tabQr" class="tab-btn" type="button">微信 / 支付宝</button>
+      </div>
+
+      <div id="paymentCarousel" class="payment-carousel">
+        <div class="payment-page">
+          <div class="bank-row">
+            <div>
+              <div class="bank-label">Account holder</div>
+              <div class="bank-value">Zilong Deng</div>
+            </div>
+            <button class="copy-btn" data-copy="Zilong Deng" type="button">复制</button>
           </div>
-          <button class="copy-btn" data-copy="Zilong Deng" type="button">复制</button>
-        </div>
 
-        <div class="bank-row">
-          <div class="bank-meta">
-            <div class="bank-label">Bank</div>
-            <div class="bank-value">Monzo Bank</div>
+          <div class="bank-row">
+            <div>
+              <div class="bank-label">Bank</div>
+              <div class="bank-value">Monzo Bank</div>
+            </div>
+            <button class="copy-btn" data-copy="Monzo Bank" type="button">复制</button>
           </div>
-          <button class="copy-btn" data-copy="Monzo Bank" type="button">复制</button>
-        </div>
 
-        <div class="bank-row">
-          <div class="bank-meta">
-            <div class="bank-label">Account number</div>
-            <div class="bank-value">74892264</div>
+          <div class="bank-row">
+            <div>
+              <div class="bank-label">Account number</div>
+              <div class="bank-value">74892264</div>
+            </div>
+            <button class="copy-btn" data-copy="74892264" type="button">复制</button>
           </div>
-          <button class="copy-btn" data-copy="74892264" type="button">复制</button>
-        </div>
 
-        <div class="bank-row">
-          <div class="bank-meta">
-            <div class="bank-label">Sort code</div>
-            <div class="bank-value">04-00-03</div>
+          <div class="bank-row">
+            <div>
+              <div class="bank-label">Sort code</div>
+              <div class="bank-value">04-00-03</div>
+            </div>
+            <button class="copy-btn" data-copy="04-00-03" type="button">复制</button>
           </div>
-          <button class="copy-btn" data-copy="04-00-03" type="button">复制</button>
-        </div>
 
-        <div class="bank-row">
-          <div class="bank-meta">
-            <div class="bank-label">IBAN</div>
-            <div class="bank-value">GB71MONZ04000374892264</div>
+          <div class="bank-row">
+            <div>
+              <div class="bank-label">IBAN</div>
+              <div class="bank-value">GB71MONZ04000374892264</div>
+            </div>
+            <button class="copy-btn" data-copy="GB71MONZ04000374892264" type="button">复制</button>
           </div>
-          <button class="copy-btn" data-copy="GB71MONZ04000374892264" type="button">复制</button>
-        </div>
 
-        <div class="bank-row">
-          <div class="bank-meta">
-            <div class="bank-label">BIC</div>
-            <div class="bank-value">MONZGB2L</div>
+          <div class="bank-row">
+            <div>
+              <div class="bank-label">BIC</div>
+              <div class="bank-value">MONZGB2L</div>
+            </div>
+            <button class="copy-btn" data-copy="MONZGB2L" type="button">复制</button>
           </div>
-          <button class="copy-btn" data-copy="MONZGB2L" type="button">复制</button>
+
+          <div class="transfer-note">
+            <strong>银行转账说明：</strong><br>
+            1. 请优先按上方 <strong>GBP 英镑金额</strong> 转账。<br>
+            2. 如果你在英国境内转账，通常只需要 Account number 和 Sort code。<br>
+            3. 国际转账时可使用 IBAN 和 BIC。<br>
+            4. 付款完成后，请等待管理员确认到账。
+          </div>
         </div>
 
-        <div class="transfer-note">
-          <strong>付款说明：</strong><br>
-          1. 请优先按上方 <strong>GBP 英镑金额</strong> 转账。<br>
-          2. 付款完成后，请等待管理员在后台确认到账。<br>
-          3. 确认成功后，你的会员权限会自动生效。<br>
-          4. 如果你使用非英镑渠道付款，请以实际到账情况为准。
-        </div>
+        <div class="payment-page">
+          <div class="qr-grid">
+            <div class="qr-card">
+              <div class="qr-title">微信支付</div>
+              <div class="qr-frame">
+                <img
+                  src="./assets/wechat-pay.jpg"
+                  alt="微信支付二维码"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                />
+                <div class="qr-placeholder" style="display:none;">
+                  你之后把微信付款码放到<br>
+                  <strong>./assets/wechat-pay.jpg</strong>
+                </div>
+              </div>
+            </div>
 
-        <div class="payment-footer">
+            <div class="qr-card">
+              <div class="qr-title">支付宝</div>
+              <div class="qr-frame">
+                <img
+                  src="./assets/alipay-pay.jpg"
+                  alt="支付宝付款码"
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                />
+                <div class="qr-placeholder" style="display:none;">
+                  你之后把支付宝付款码放到<br>
+                  <strong>./assets/alipay-pay.jpg</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="soft-panel">
-            <strong>当前状态：</strong>你的申请已通过，正在等待付款。
-          </div>
-          <div class="soft-panel">
-            <strong>提示：</strong>如果你需要国际转账，可使用 IBAN 和 BIC；如果你在英国境内转账，通常只需要 Account number 和 Sort code。
+            <strong>二维码付款说明：</strong><br>
+            1. 人民币金额仅作参考换算。<br>
+            2. 正式价格仍以英镑金额为准。<br>
+            3. 如果扫码支付与参考值有轻微偏差，以实际到账情况为准。<br>
+            4. 付款完成后，请等待管理员确认到账。
           </div>
         </div>
+      </div>
+
+      <div class="pager-dots">
+        <div id="dotBank" class="pager-dot active"></div>
+        <div id="dotQr" class="pager-dot"></div>
       </div>
     </section>
   </main>
@@ -426,9 +541,19 @@
     const paymentPanel = document.getElementById("paymentPanel");
     const paymentAmountValue = document.getElementById("paymentAmountValue");
     const paymentAmountNote = document.getElementById("paymentAmountNote");
+    const rateLine = document.getElementById("rateLine");
+    const paymentCarousel = document.getElementById("paymentCarousel");
+    const tabBank = document.getElementById("tabBank");
+    const tabQr = document.getElementById("tabQr");
+    const dotBank = document.getElementById("dotBank");
+    const dotQr = document.getElementById("dotQr");
 
     let latestReqUnsub = null;
+    let rateUnsub = null;
     let latestRequestId = "";
+    let currentCnyPerGbp = null;
+    let currentRateUpdatedAt = 0;
+    let currentAmountPence = 0;
 
     function calcMembershipAmountPence(days) {
       const safeDays = Math.max(1, Math.floor(Number(days) || 1));
@@ -445,6 +570,27 @@
 
     function penceToPounds(pence) {
       return `£${(pence / 100).toFixed(2)}`;
+    }
+
+    function formatRateTime(ts) {
+      if (!ts) return "未提供更新时间";
+      return new Date(ts).toLocaleString();
+    }
+
+    function updateRateDisplay() {
+      if (!currentAmountPence) {
+        rateLine.textContent = "正式价格以 GBP 为准。";
+        return;
+      }
+
+      if (typeof currentCnyPerGbp !== "number") {
+        rateLine.textContent = "当前未设置参考汇率，正式价格以 GBP 为准。";
+        return;
+      }
+
+      const gbp = currentAmountPence / 100;
+      const cny = gbp * currentCnyPerGbp;
+      rateLine.textContent = `参考汇率：1 GBP ≈ ¥${currentCnyPerGbp.toFixed(2)}，参考金额约 ¥${cny.toFixed(2)}，更新于 ${formatRateTime(currentRateUpdatedAt)}。`;
     }
 
     function updatePricePreview() {
@@ -473,20 +619,55 @@
       statusText.textContent = message;
     }
 
+    function setPaymentPage(index) {
+      paymentCarousel.scrollTo({
+        left: paymentCarousel.clientWidth * index,
+        behavior: "smooth"
+      });
+
+      const bankActive = index === 0;
+      tabBank.classList.toggle("active", bankActive);
+      tabQr.classList.toggle("active", !bankActive);
+      dotBank.classList.toggle("active", bankActive);
+      dotQr.classList.toggle("active", !bankActive);
+    }
+
     function showPaymentPanel(amountPence, type, days) {
+      currentAmountPence = amountPence;
       paymentAmountValue.textContent = penceToPounds(amountPence);
 
       if (type === "resident_join") {
-        paymentAmountNote.textContent = "这是成为住户的固定分摊费用，请按英镑金额转账。";
+        paymentAmountNote.textContent = "这是成为住户的固定分摊费用，正式价格以英镑为准。";
       } else {
-        paymentAmountNote.textContent = `当前申请为 ${days} 天会员，请按英镑金额转账。`;
+        paymentAmountNote.textContent = `当前申请为 ${days} 天会员，正式价格以英镑为准。`;
       }
 
+      updateRateDisplay();
       paymentPanel.style.display = "";
     }
 
     function hidePaymentPanel() {
       paymentPanel.style.display = "none";
+      currentAmountPence = 0;
+      updateRateDisplay();
+    }
+
+    function listenExchangeRate() {
+      if (rateUnsub) rateUnsub();
+
+      const rateRef = ref(db, "exchangeRates");
+      rateUnsub = onValue(rateRef, (snap) => {
+        const data = snap.val() || {};
+        const rate = Number(data.cnyPerGbp);
+        currentCnyPerGbp = Number.isFinite(rate) ? rate : null;
+        currentRateUpdatedAt = Number(data.updatedAt) || 0;
+        updateRateDisplay();
+      }, (error) => {
+        console.error(error);
+        currentCnyPerGbp = null;
+        currentRateUpdatedAt = 0;
+        updateRateDisplay();
+      });
     }
 
     function listenLatestRequest(uid) {
@@ -526,7 +707,7 @@
           ];
 
           if (status === "approved_waiting_payment") {
-            pieces.push("你的申请已经审批通过。请使用下方的银行转账信息完成付款。");
+            pieces.push("你的申请已经审批通过。请使用下方的银行转账或付款码完成付款。");
             setStatus(pieces.join("\n"), "warn");
             showPaymentPanel(amount, latest.type, latest.plan?.days || 1);
             return;
@@ -601,7 +782,7 @@
             note: noteInput.value.trim()
           },
           checkout: {
-            provider: "manual_bank_transfer",
+            provider: "manual_multi_payment",
             sessionId: "",
             url: "",
             status: "waiting_manual_payment"
@@ -640,6 +821,18 @@
       });
     });
 
+    tabBank.addEventListener("click", () => setPaymentPage(0));
+    tabQr.addEventListener("click", () => setPaymentPage(1));
+
+    paymentCarousel.addEventListener("scroll", () => {
+      const index = Math.round(paymentCarousel.scrollLeft / paymentCarousel.clientWidth);
+      const bankActive = index === 0;
+      tabBank.classList.toggle("active", bankActive);
+      tabQr.classList.toggle("active", !bankActive);
+      dotBank.classList.toggle("active", bankActive);
+      dotQr.classList.toggle("active", !bankActive);
+    });
+
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         setStatus("请登录后提交会员申请。", "muted");
@@ -650,6 +843,7 @@
       if (!displayNameInput.value && user.displayName) {
         displayNameInput.value = user.displayName;
       }
+      listenExchangeRate();
       listenLatestRequest(user.uid);
     });
   </script>
