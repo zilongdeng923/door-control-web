@@ -384,7 +384,7 @@
     }
 
     function syncTopActions(user, role, canReviewPaid = false) {
-      const canSeeReceiver = !!user && (user.uid === ADMIN_UID || role === "resident" || role === "owner");
+      const canSeeReceiver = !!user && (user.uid === ADMIN_UID || role === "resident" || role === "admin");
       receiverLink.classList.toggle("hidden", !canSeeReceiver);
       paidReceiverLink.classList.toggle("hidden", !canReviewPaid);
     }
@@ -441,7 +441,7 @@
     }
 
     function computeDoorAccess(role, userAccess) {
-      if (role === "owner" || role === "resident") return true;
+      if (role === "admin" || role === "resident") return true;
       if (userAccess?.membershipActive === true && (userAccess?.paidUntil || 0) > Date.now()) return true;
       return false;
     }
