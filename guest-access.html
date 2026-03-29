@@ -44,7 +44,7 @@
   <div class="wrap">
     <section class="hero">
       <h1 class="title">临时访问</h1>
-      <p class="sub">这是审核通过后分配给你的独立临时访问页面。到期后会自动失效。</p>
+      <p class="sub">这是审核通过后分配给你的独立临时访问页面。到期或次数用尽后会自动失效。</p>
     </section>
 
     <section class="card">
@@ -89,8 +89,10 @@
 
     function fmtRemain(ms) {
       const sec = Math.max(0, Math.floor(ms / 1000));
-      const m = Math.floor(sec / 60);
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
       const s = sec % 60;
+      if (h > 0) return `${h} 小时 ${m} 分 ${s} 秒`;
       return `${m} 分 ${s} 秒`;
     }
 
@@ -111,15 +113,8 @@
 
       const now = Date.now();
       const expired = (currentGrant.expiresAt || 0) <= now;
-      const used = !!currentGrant.used;
-      const active = currentGrant.status === "active" && !expired && !used;
-
-      if (used) {
-        stateText.textContent = "已使用";
-        remainText.textContent = "这次临时访问已经完成。";
-        openReqBtn.disabled = true;
-        return;
-      }
+      const noUsesLeft = (currentGrant.remainingUses || 0) <= 0;
+      const active = currentGrant.status === "active" && !expired && !noUsesLeft;
 
       if (expired || currentGrant.status === "expired") {
         stateText.textContent = "已过期";
@@ -128,9 +123,16 @@
         return;
       }
 
+      if (noUsesLeft || currentGrant.status === "used") {
+        stateText.textContent = "次数已用尽";
+        remainText.textContent = "当前授权的开门次数已经全部使用。";
+        openReqBtn.disabled = true;
+        return;
+      }
+
       if (active) {
         stateText.textContent = "有效";
-        remainText.textContent = `剩余时间：${fmtRemain(currentGrant.expiresAt - now)}`;
+        remainText.textContent = `剩余时间：${fmtRemain(currentGrant.expiresAt - now)}；剩余次数：${currentGrant.remainingUses}`;
         openReqBtn.disabled = false;
         return;
       }
@@ -163,9 +165,9 @@
         const existing = await get(reqRef);
         const now = Date.now();
         const expired = (currentGrant.expiresAt || 0) <= now;
-        const used = !!currentGrant.used;
+        const noUsesLeft = (currentGrant.remainingUses || 0) <= 0;
 
-        if (expired || used || currentGrant.status !== "active") {
+        if (expired || noUsesLeft || currentGrant.status !== "active") {
           actionStatus.textContent = "当前授权已不可用。";
           return;
         }
