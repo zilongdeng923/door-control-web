@@ -118,6 +118,7 @@
     };
 
     const REQUEST_SESSION_KEY = "door-control-public-session-token";
+    const GUEST_GRANT_KEY = "door-control-guest-grant-token";
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -158,6 +159,14 @@
       localStorage.removeItem(REQUEST_SESSION_KEY);
     }
 
+    function storeGuestGrantToken(token) {
+      localStorage.setItem(GUEST_GRANT_KEY, token);
+    }
+
+    function getStoredGuestGrantToken() {
+      return localStorage.getItem(GUEST_GRANT_KEY) || "";
+    }
+
     function getStoredSessionToken() {
       return localStorage.getItem(REQUEST_SESSION_KEY) || "";
     }
@@ -181,9 +190,11 @@
         }
 
         redirectInFlight = true;
+        storeGuestGrantToken(grantToken);
+        clearSessionToken();
         setStatus("申请已通过，正在跳转到临时访问页面…", "ok");
         setTimeout(() => {
-          window.location.href = `./guest-access.html?grant=${encodeURIComponent(grantToken)}`;
+          window.location.href = "./guest-access.html";
         }, 600);
       } catch (error) {
         console.error(error);
@@ -291,6 +302,12 @@
         submitBtn.disabled = false;
       }
     });
+
+    const existingGrantToken = getStoredGuestGrantToken();
+    if (existingGrantToken) {
+      setStatus("检测到已批准的临时访问，正在恢复访问页…", "muted");
+      checkGrantAndMaybeRedirect(existingGrantToken);
+    }
 
     const existingToken = getStoredSessionToken();
     if (existingToken) {

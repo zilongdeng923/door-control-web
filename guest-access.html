@@ -57,6 +57,11 @@
       <button id="openReqBtn" class="btn" disabled>请求开门</button>
       <div id="actionStatus" class="status muted" style="margin-top:12px;">接收端在线时，会把你的请求中转为真正的开门指令。</div>
     </section>
+    <section class="card">
+      <button id="newRequestBtn" class="btn" style="background: rgba(255,255,255,0.08); box-shadow:none; border:1px solid rgba(255,255,255,0.10);">提交新的申请</button>
+      <div class="status muted" style="margin-top:12px;">当前授权失效后，可以从这里快速回到申请页。</div>
+    </section>
+
   </div>
 
   <script type="module">
@@ -73,19 +78,49 @@
       appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
     };
 
+    const GUEST_GRANT_KEY = "door-control-guest-grant-token";
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
     const params = new URLSearchParams(window.location.search);
-    const grantToken = params.get("grant") || "";
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 
     const stateText = document.getElementById("stateText");
     const remainText = document.getElementById("remainText");
     const actionStatus = document.getElementById("actionStatus");
     const openReqBtn = document.getElementById("openReqBtn");
+    const newRequestBtn = document.getElementById("newRequestBtn");
 
     let currentGrant = null;
     let timer = null;
+    let grantUnsubscribe = null;
+    let grantToken = "";
+
+    function storeGrantToken(token) {
+      localStorage.setItem(GUEST_GRANT_KEY, token);
+    }
+
+    function clearGrantToken() {
+      localStorage.removeItem(GUEST_GRANT_KEY);
+      grantToken = "";
+    }
+
+    function getStoredGrantToken() {
+      return localStorage.getItem(GUEST_GRANT_KEY) || "";
+    }
+
+    function normalizeGrantToken() {
+      const fromHash = hashParams.get("grant") || "";
+      const fromQuery = params.get("grant") || "";
+      const fromStorage = getStoredGrantToken();
+      const token = fromHash || fromQuery || fromStorage;
+      if (token) storeGrantToken(token);
+      if (fromHash || fromQuery) {
+        history.replaceState({}, "", "./guest-access.html");
+      }
+      return token;
+    }
 
     function fmtRemain(ms) {
       const sec = Math.max(0, Math.floor(ms / 1000));
@@ -96,17 +131,21 @@
       return `${m} 分 ${s} 秒`;
     }
 
+    function gotoRequestPage() {
+      window.location.href = "./request.html";
+    }
+
     function renderGrant() {
       if (!grantToken) {
-        stateText.textContent = "无效链接";
-        remainText.textContent = "缺少 grant 参数。";
+        stateText.textContent = "无有效授权";
+        remainText.textContent = "当前设备中没有保存可用的临时访问密钥。";
         openReqBtn.disabled = true;
         return;
       }
 
       if (!currentGrant) {
         stateText.textContent = "未找到授权";
-        remainText.textContent = "该临时访问链接不存在或已失效。";
+        remainText.textContent = "该临时访问链接不存在、已失效，或还未同步完成。";
         openReqBtn.disabled = true;
         return;
       }
@@ -119,14 +158,18 @@
       if (expired || currentGrant.status === "expired") {
         stateText.textContent = "已过期";
         remainText.textContent = "授权时间已结束。";
+        actionStatus.textContent = "这份临时访问已失效，请重新提交申请。";
         openReqBtn.disabled = true;
+        clearGrantToken();
         return;
       }
 
       if (noUsesLeft || currentGrant.status === "used") {
         stateText.textContent = "次数已用尽";
         remainText.textContent = "当前授权的开门次数已经全部使用。";
+        actionStatus.textContent = "这份临时访问已失效，请重新提交申请。";
         openReqBtn.disabled = true;
+        clearGrantToken();
         return;
       }
 
@@ -142,19 +185,26 @@
       openReqBtn.disabled = true;
     }
 
-    if (grantToken) {
-      onValue(ref(db, `temporaryAccessGrants/${grantToken}`), (snapshot) => {
+    function startGrantListener() {
+      grantToken = normalizeGrantToken();
+      if (!grantToken) {
+        renderGrant();
+        return;
+      }
+
+      if (grantUnsubscribe) grantUnsubscribe();
+      grantUnsubscribe = onValue(ref(db, `temporaryAccessGrants/${grantToken}`), (snapshot) => {
         currentGrant = snapshot.val();
         renderGrant();
       }, (error) => {
         console.error(error);
         stateText.textContent = "读取失败";
         remainText.textContent = "无法读取授权信息。";
+        openReqBtn.disabled = true;
       });
 
+      if (timer) clearInterval(timer);
       timer = setInterval(renderGrant, 1000);
-    } else {
-      renderGrant();
     }
 
     openReqBtn.addEventListener("click", async () => {
@@ -167,13 +217,17 @@
 
         if (expired || noUsesLeft || currentGrant.status !== "active") {
           actionStatus.textContent = "当前授权已不可用。";
+          renderGrant();
           return;
         }
 
         await set(ref(db, `guestDoorRequests/${grantToken}`), {
           createdAt: now,
           status: "pending",
-          processedAt: 0
+          processedAt: 0,
+          processorUid: "",
+          requestId: `guest_${now}`,
+          message: "waiting"
         });
 
         actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
@@ -183,8 +237,13 @@
       }
     });
 
+    newRequestBtn.addEventListener("click", gotoRequestPage);
+
+    startGrantListener();
+
     window.addEventListener("beforeunload", () => {
       if (timer) clearInterval(timer);
+      if (grantUnsubscribe) grantUnsubscribe();
     });
   </script>
 </body>
