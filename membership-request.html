@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>会员申请</title>
+  <meta name="theme-color" content="#0b1226" />
+  <style>
+    :root {
+      --bg:#0b1226; --text:#eef4ff; --muted:#a9bad7; --muted2:#91a4c6;
+      --ok:#c8f7d7; --err:#ffd2d2; --warn:#ffe7ad;
+      --panel:rgba(9,15,30,0.42); --border:rgba(255,255,255,0.08); --shadow:0 24px 60px rgba(0,0,0,0.42);
+      --blue1:rgba(37,99,235,0.96); --blue2:rgba(59,130,246,0.94);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+    body{
+      min-height:100vh;display:flex;justify-content:center;padding:24px 18px;
+      background:
+        radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),
+        radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%);
+    }
+    .app{width:100%;max-width:520px}
+    .hero{text-align:center;margin-bottom:18px}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
+    .chip{padding:10px 14px;border-radius:999px;font-size:12px;color:#c8d6f0;background:rgba(7,13,28,0.28);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(10px)}
+    .title{margin:0 0 12px;font-size:42px;font-weight:800;letter-spacing:-0.04em;line-height:1}
+    .sub{margin:0;color:var(--muted);line-height:1.75}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:18px;backdrop-filter:blur(20px);box-shadow:var(--shadow);margin-bottom:14px}
+    .grid{display:grid;gap:14px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+    input,select,textarea{
+      width:100%;padding:14px 16px;border-radius:18px;border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);color:var(--text);font-size:15px;outline:none
+    }
+    textarea{min-height:110px;resize:vertical}
+    .btn{
+      width:100%;border:none;cursor:pointer;color:#fff;padding:18px;border-radius:20px;font-size:18px;font-weight:700;
+      background:linear-gradient(135deg,var(--blue1),var(--blue2));box-shadow:0 14px 32px rgba(37,99,235,0.32)
+    }
+    .btn:disabled{opacity:.64;cursor:not-allowed}
+    .status{line-height:1.7;white-space:pre-wrap}
+    .muted{color:var(--muted)} .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)}
+    .price{font-size:34px;font-weight:800;letter-spacing:-0.03em;margin:8px 0 6px}
+    .inline{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .mini{font-size:13px;color:var(--muted);line-height:1.7}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="chips">
+        <div class="chip">Member Support</div>
+        <div class="chip">Manual Payment v1</div>
+      </div>
+      <h1 class="title">会员申请</h1>
+      <p class="sub">这不是强制收费入口，而是一个支持设备维护与长期使用的申请页。<br>当前版本为审批后付款、付款确认后生效。</p>
+    </section>
+
+    <section class="card">
+      <div class="mini">支持说明</div>
+      <div class="status muted" style="margin-top:8px;">
+        这项支持会用于门禁设备、舵机、电源、维护耗材与后续升级。<br>
+        你可以把它理解成一种轻量的感谢与维护分摊，而不是硬性的商业收费。
+      </div>
+    </section>
+
+    <section class="card">
+      <form id="requestForm" class="grid">
+        <div>
+          <label for="requestType">申请类型</label>
+          <select id="requestType">
+            <option value="membership">普通会员</option>
+            <option value="resident_join">成为住户（分摊费）</option>
+          </select>
+        </div>
+
+        <div class="inline">
+          <div>
+            <label for="displayName">称呼</label>
+            <input id="displayName" maxlength="80" placeholder="例如：Tom" required />
+          </div>
+          <div>
+            <label for="days">会员天数</label>
+            <input id="days" type="number" min="1" max="3650" value="7" required />
+          </div>
+        </div>
+
+        <div>
+          <label for="note">备注（可选）</label>
+          <textarea id="note" maxlength="300" placeholder="例如：预计长期使用 / 我是某某的朋友 / 想先申请一个月试试"></textarea>
+        </div>
+
+        <button id="submitBtn" class="btn" type="submit">提交会员申请</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="mini">当前估算</div>
+      <div id="priceText" class="price">£0.70</div>
+      <div id="priceDesc" class="status muted">7 天以内按每天 £0.1 计算。</div>
+    </section>
+
+    <section class="card">
+      <div class="mini">申请状态</div>
+      <div id="statusText" class="status muted" style="margin-top:10px;">请先登录并提交申请。</div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+    import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
+      authDomain: "door-control-1fb5a.firebaseapp.com",
+      databaseURL: "https://door-control-1fb5a-default-rtdb.firebaseio.com",
+      projectId: "door-control-1fb5a",
+      storageBucket: "door-control-1fb5a.firebasestorage.app",
+      messagingSenderId: "594532135937",
+      appId: "1:594532135937:web:e5c91175f45f7d54d83c00"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    const requestForm = document.getElementById("requestForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const requestType = document.getElementById("requestType");
+    const displayNameInput = document.getElementById("displayName");
+    const daysInput = document.getElementById("days");
+    const noteInput = document.getElementById("note");
+    const priceText = document.getElementById("priceText");
+    const priceDesc = document.getElementById("priceDesc");
+    const statusText = document.getElementById("statusText");
+
+    let latestReqUnsub = null;
+
+    function calcMembershipAmountPence(days) {
+      const safeDays = Math.max(1, Math.floor(Number(days) || 1));
+      if (safeDays <= 7) return safeDays * 10;
+      const extraDays = safeDays - 7;
+      const extraWeeks = Math.floor(extraDays / 7);
+      const remainDays = extraDays % 7;
+      return 70 + extraWeeks * 50 + remainDays * 10;
+    }
+
+    function calcResidentJoinAmountPence() {
+      return 1500;
+    }
+
+    function penceToPounds(pence) {
+      return `£${(pence / 100).toFixed(2)}`;
+    }
+
+    function updatePricePreview() {
+      const type = requestType.value;
+      const days = Math.max(1, Math.floor(Number(daysInput.value) || 1));
+
+      if (type === "resident_join") {
+        priceText.textContent = penceToPounds(calcResidentJoinAmountPence());
+        priceDesc.textContent = "成为住户按固定分摊费 £15.00 计算。";
+        daysInput.disabled = true;
+        return;
+      }
+
+      daysInput.disabled = false;
+      const pence = calcMembershipAmountPence(days);
+      priceText.textContent = penceToPounds(pence);
+      if (days <= 7) {
+        priceDesc.textContent = `${days} 天按每天 £0.1 计算。`;
+      } else {
+        priceDesc.textContent = "前 7 天按每天 £0.1，之后每整周 £0.5，未满一周的部分继续按天算。";
+      }
+    }
+
+    function setStatus(message, type = "muted") {
+      statusText.className = `status ${type}`;
+      statusText.textContent = message;
+    }
+
+    function listenLatestRequest(uid) {
+      if (latestReqUnsub) latestReqUnsub();
+
+      const requestsRef = ref(db, "paidAccessRequests");
+      latestReqUnsub = onValue(requestsRef, (snap) => {
+        const all = snap.val() || {};
+        let latest = null;
+        let latestId = "";
+        for (const [reqId, req] of Object.entries(all)) {
+          if (req.uid !== uid) continue;
+          if (!latest || (req.createdAt || 0) > (latest.createdAt || 0)) {
+            latest = req;
+            latestId = reqId;
+          }
+        }
+        if (!latest) {
+          setStatus("还没有找到你的会员申请记录。", "muted");
+          return;
+        }
+
+        const amount = latest.pricing?.amountPence || 0;
+        const status = latest.status || "pending";
+        const pieces = [
+          `最新申请：${latestId}`,
+          `类型：${latest.type === "resident_join" ? "成为住户" : "普通会员"}`,
+          `金额：${penceToPounds(amount)}`,
+          `状态：${status}`
+        ];
+
+        if (status === "approved_waiting_payment") {
+          pieces.push("你的申请已经审批通过，等待付款确认。请联系管理员完成付款。");
+          setStatus(pieces.join("\n"), "warn");
+          return;
+        }
+
+        if (status === "paid") {
+          const until = latest.result?.expiresAt ? new Date(latest.result.expiresAt).toLocaleString() : "-";
+          pieces.push(`已生效至：${until}`);
+          setStatus(pieces.join("\n"), "ok");
+          return;
+        }
+
+        if (status === "rejected") {
+          pieces.push("申请已被拒绝。");
+          setStatus(pieces.join("\n"), "err");
+          return;
+        }
+
+        setStatus(pieces.join("\n"), status === "pending" ? "warn" : "muted");
+      }, (error) => {
+        console.error(error);
+        setStatus("监听会员申请状态失败。", "err");
+      });
+    }
+
+    requestType.addEventListener("change", updatePricePreview);
+    daysInput.addEventListener("input", updatePricePreview);
+    updatePricePreview();
+
+    requestForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      submitBtn.disabled = true;
+
+      try {
+        let user = auth.currentUser;
+        if (!user) {
+          await signInWithPopup(auth, provider);
+          user = auth.currentUser;
+        }
+        if (!user) throw new Error("登录失败");
+
+        const type = requestType.value;
+        const displayName = displayNameInput.value.trim() || user.displayName || "Unnamed";
+        const days = type === "resident_join" ? 3650 : Math.max(1, Math.floor(Number(daysInput.value) || 1));
+        const amountPence = type === "resident_join" ? calcResidentJoinAmountPence() : calcMembershipAmountPence(days);
+        const now = Date.now();
+
+        const reqRef = push(ref(db, "paidAccessRequests"));
+        await set(reqRef, {
+          uid: user.uid,
+          email: user.email || "",
+          displayName,
+          type,
+          status: "pending",
+          createdAt: now,
+          approvedAt: 0,
+          approvedBy: "",
+          rejectedAt: 0,
+          rejectedBy: "",
+          paidAt: 0,
+          paymentConfirmedBy: "",
+          plan: { days },
+          pricing: {
+            currency: "gbp",
+            amountPence,
+            pricingVersion: "v1"
+          },
+          copy: {
+            title: type === "resident_join" ? "成为住户分摊申请" : "支持设备维护",
+            note: noteInput.value.trim()
+          },
+          checkout: {
+            provider: "manual_v1",
+            sessionId: "",
+            url: "",
+            status: "not_started"
+          },
+          grantId: "",
+          result: {
+            type: "",
+            startsAt: 0,
+            expiresAt: 0
+          }
+        });
+
+        setStatus("申请已提交，正在等待管理员审批。", "warn");
+      } catch (error) {
+        console.error(error);
+        setStatus("提交会员申请失败。", "err");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setStatus("请登录后提交会员申请。", "muted");
+        if (latestReqUnsub) latestReqUnsub();
+        return;
+      }
+      if (!displayNameInput.value && user.displayName) {
+        displayNameInput.value = user.displayName;
+      }
+      listenLatestRequest(user.uid);
+    });
+  </script>
+</body>
+</html>
