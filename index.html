@@ -389,8 +389,7 @@
         user.uid === ADMIN_UID ||
         role === "admin" ||
         role === "resident" ||
-        canReviewTemp ||
-        hasDoorAccess
+        canReviewTemp
       );
     
       const canSeePaidReceiver = !!user && (
