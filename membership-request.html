@@ -11,6 +11,10 @@
       --ok:#c8f7d7; --err:#ffd2d2; --warn:#ffe7ad;
       --panel:rgba(9,15,30,0.42); --border:rgba(255,255,255,0.08); --shadow:0 24px 60px rgba(0,0,0,0.42);
       --blue1:rgba(37,99,235,0.96); --blue2:rgba(59,130,246,0.94);
+      --glass:rgba(255,255,255,0.06);
+      --glass-strong:rgba(255,255,255,0.10);
+      --line:rgba(255,255,255,0.10);
+      --glow:rgba(120,184,255,0.28);
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
@@ -20,13 +24,19 @@
         radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),
         radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%);
     }
-    .app{width:100%;max-width:520px}
+    .app{width:100%;max-width:560px}
     .hero{text-align:center;margin-bottom:18px}
     .chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
-    .chip{padding:10px 14px;border-radius:999px;font-size:12px;color:#c8d6f0;background:rgba(7,13,28,0.28);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(10px)}
+    .chip{
+      padding:10px 14px;border-radius:999px;font-size:12px;color:#c8d6f0;
+      background:rgba(7,13,28,0.28);border:1px solid rgba(255,255,255,0.08);backdrop-filter:blur(10px)
+    }
     .title{margin:0 0 12px;font-size:42px;font-weight:800;letter-spacing:-0.04em;line-height:1}
     .sub{margin:0;color:var(--muted);line-height:1.75}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:18px;backdrop-filter:blur(20px);box-shadow:var(--shadow);margin-bottom:14px}
+    .card{
+      background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:18px;
+      backdrop-filter:blur(20px);box-shadow:var(--shadow);margin-bottom:14px
+    }
     .grid{display:grid;gap:14px}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
     input,select,textarea{
@@ -44,6 +54,200 @@
     .price{font-size:34px;font-weight:800;letter-spacing:-0.03em;margin:8px 0 6px}
     .inline{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .mini{font-size:13px;color:var(--muted);line-height:1.7}
+
+    .payment-card {
+      position: relative;
+      overflow: hidden;
+      padding: 0;
+      border-radius: 32px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)),
+        radial-gradient(circle at top right, rgba(120,184,255,0.26), rgba(120,184,255,0) 42%),
+        rgba(9,15,30,0.58);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow:
+        0 24px 60px rgba(0,0,0,0.42),
+        0 0 0 1px rgba(255,255,255,0.03) inset,
+        0 0 48px rgba(120,184,255,0.10);
+      backdrop-filter: blur(26px);
+    }
+
+    .payment-hero {
+      position: relative;
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(135deg, rgba(37,99,235,0.22), rgba(59,130,246,0.06));
+    }
+
+    .payment-hero::after {
+      content: "";
+      position: absolute;
+      top: -20px;
+      right: -30px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(160,210,255,0.22), rgba(160,210,255,0));
+      filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .payment-kicker {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #d7e7ff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 12px;
+    }
+
+    .payment-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin: 0 0 8px;
+    }
+
+    .payment-sub {
+      color: var(--muted);
+      line-height: 1.75;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .amount-panel {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 16px 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 24px rgba(120,184,255,0.08);
+    }
+
+    .amount-label {
+      font-size: 12px;
+      color: var(--muted2);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .amount-value {
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #f4f8ff;
+      text-shadow: 0 0 18px rgba(160,210,255,0.14);
+    }
+
+    .amount-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .payment-body {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .bank-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 14px 14px 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .bank-meta {
+      min-width: 0;
+    }
+
+    .bank-label {
+      font-size: 12px;
+      color: var(--muted2);
+      margin-bottom: 6px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .bank-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f2f7ff;
+      word-break: break-word;
+      line-height: 1.5;
+    }
+
+    .copy-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+      color: #eef4ff;
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      min-width: 84px;
+    }
+
+    .copy-btn:hover {
+      background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+    }
+
+    .transfer-note {
+      margin-top: 4px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 13px;
+    }
+
+    .transfer-note strong {
+      color: #ecf4ff;
+      font-weight: 700;
+    }
+
+    .payment-footer {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .soft-panel {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .soft-panel strong {
+      color: #eef4ff;
+    }
+
+    @media (max-width: 560px) {
+      .inline { grid-template-columns: 1fr; }
+      .bank-row { grid-template-columns: 1fr; }
+      .copy-btn { width: 100%; }
+      .amount-value { font-size: 34px; }
+    }
   </style>
 </head>
 <body>
@@ -51,10 +255,10 @@
     <section class="hero">
       <div class="chips">
         <div class="chip">Member Support</div>
-        <div class="chip">Stripe Checkout</div>
+        <div class="chip">Manual Transfer</div>
       </div>
       <h1 class="title">会员申请</h1>
-      <p class="sub">支持设备维护与长期使用权限。<br>审批通过后可以直接进入 Stripe 付款。</p>
+      <p class="sub">支持设备维护与长期使用权限。<br>审批通过后会显示你的付款信息窗口。</p>
     </section>
 
     <section class="card">
@@ -104,7 +308,89 @@
     <section class="card">
       <div class="mini">申请状态</div>
       <div id="statusText" class="status muted" style="margin-top:10px;">请先登录并提交申请。</div>
-      <button id="payNowBtn" class="btn" style="margin-top:14px; display:none;">前往付款</button>
+    </section>
+
+    <section id="paymentPanel" class="payment-card" style="display:none;">
+      <div class="payment-hero">
+        <div class="payment-kicker">Payment Details</div>
+        <h2 class="payment-title">银行转账信息</h2>
+        <p class="payment-sub">
+          你的申请已经通过审批。请按下方信息完成付款，管理员确认到账后会为你开通权限。
+        </p>
+
+        <div class="amount-panel">
+          <div class="amount-label">Amount due</div>
+          <div id="paymentAmountValue" class="amount-value">£0.00</div>
+          <div id="paymentAmountNote" class="amount-note">请按英镑金额转账。</div>
+        </div>
+      </div>
+
+      <div class="payment-body">
+        <div class="bank-row">
+          <div class="bank-meta">
+            <div class="bank-label">Account holder</div>
+            <div class="bank-value">Zilong Deng</div>
+          </div>
+          <button class="copy-btn" data-copy="Zilong Deng" type="button">复制</button>
+        </div>
+
+        <div class="bank-row">
+          <div class="bank-meta">
+            <div class="bank-label">Bank</div>
+            <div class="bank-value">Monzo Bank</div>
+          </div>
+          <button class="copy-btn" data-copy="Monzo Bank" type="button">复制</button>
+        </div>
+
+        <div class="bank-row">
+          <div class="bank-meta">
+            <div class="bank-label">Account number</div>
+            <div class="bank-value">74892264</div>
+          </div>
+          <button class="copy-btn" data-copy="74892264" type="button">复制</button>
+        </div>
+
+        <div class="bank-row">
+          <div class="bank-meta">
+            <div class="bank-label">Sort code</div>
+            <div class="bank-value">04-00-03</div>
+          </div>
+          <button class="copy-btn" data-copy="04-00-03" type="button">复制</button>
+        </div>
+
+        <div class="bank-row">
+          <div class="bank-meta">
+            <div class="bank-label">IBAN</div>
+            <div class="bank-value">GB71MONZ04000374892264</div>
+          </div>
+          <button class="copy-btn" data-copy="GB71MONZ04000374892264" type="button">复制</button>
+        </div>
+
+        <div class="bank-row">
+          <div class="bank-meta">
+            <div class="bank-label">BIC</div>
+            <div class="bank-value">MONZGB2L</div>
+          </div>
+          <button class="copy-btn" data-copy="MONZGB2L" type="button">复制</button>
+        </div>
+
+        <div class="transfer-note">
+          <strong>付款说明：</strong><br>
+          1. 请优先按上方 <strong>GBP 英镑金额</strong> 转账。<br>
+          2. 付款完成后，请等待管理员在后台确认到账。<br>
+          3. 确认成功后，你的会员权限会自动生效。<br>
+          4. 如果你使用非英镑渠道付款，请以实际到账情况为准。
+        </div>
+
+        <div class="payment-footer">
+          <div class="soft-panel">
+            <strong>当前状态：</strong>你的申请已通过，正在等待付款。
+          </div>
+          <div class="soft-panel">
+            <strong>提示：</strong>如果你需要国际转账，可使用 IBAN 和 BIC；如果你在英国境内转账，通常只需要 Account number 和 Sort code。
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -112,7 +398,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
     import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
-    import { getFunctions, httpsCallable, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-functions.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -127,15 +412,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const functions = getFunctions(app);
     const provider = new GoogleAuthProvider();
-
-    if (
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname === "localhost"
-    ) {
-      connectFunctionsEmulator(functions, "127.0.0.1", 5001);
-    }
 
     const requestForm = document.getElementById("requestForm");
     const submitBtn = document.getElementById("submitBtn");
@@ -146,7 +423,9 @@
     const priceText = document.getElementById("priceText");
     const priceDesc = document.getElementById("priceDesc");
     const statusText = document.getElementById("statusText");
-    const payNowBtn = document.getElementById("payNowBtn");
+    const paymentPanel = document.getElementById("paymentPanel");
+    const paymentAmountValue = document.getElementById("paymentAmountValue");
+    const paymentAmountNote = document.getElementById("paymentAmountNote");
 
     let latestReqUnsub = null;
     let latestRequestId = "";
@@ -194,6 +473,22 @@
       statusText.textContent = message;
     }
 
+    function showPaymentPanel(amountPence, type, days) {
+      paymentAmountValue.textContent = penceToPounds(amountPence);
+
+      if (type === "resident_join") {
+        paymentAmountNote.textContent = "这是成为住户的固定分摊费用，请按英镑金额转账。";
+      } else {
+        paymentAmountNote.textContent = `当前申请为 ${days} 天会员，请按英镑金额转账。`;
+      }
+
+      paymentPanel.style.display = "";
+    }
+
+    function hidePaymentPanel() {
+      paymentPanel.style.display = "none";
+    }
+
     function listenLatestRequest(uid) {
       if (latestReqUnsub) latestReqUnsub();
 
@@ -214,7 +509,7 @@
           }
 
           latestRequestId = latestId;
-          payNowBtn.style.display = "none";
+          hidePaymentPanel();
 
           if (!latest) {
             setStatus("还没有找到你的会员申请记录。", "muted");
@@ -231,9 +526,9 @@
           ];
 
           if (status === "approved_waiting_payment") {
-            pieces.push("你的申请已经审批通过，可以进入 Stripe 付款页面完成支付。");
+            pieces.push("你的申请已经审批通过。请使用下方的银行转账信息完成付款。");
             setStatus(pieces.join("\n"), "warn");
-            payNowBtn.style.display = "";
+            showPaymentPanel(amount, latest.type, latest.plan?.days || 1);
             return;
           }
 
@@ -306,10 +601,10 @@
             note: noteInput.value.trim()
           },
           checkout: {
-            provider: "stripe_checkout",
+            provider: "manual_bank_transfer",
             sessionId: "",
             url: "",
-            status: "not_started"
+            status: "waiting_manual_payment"
           },
           grantId: "",
           result: {
@@ -328,37 +623,28 @@
       }
     });
 
-    payNowBtn.addEventListener("click", async () => {
-      try {
-        if (!latestRequestId) {
-          setStatus("没有找到可付款的申请记录。", "err");
-          return;
+    document.querySelectorAll(".copy-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const value = button.dataset.copy || "";
+        try {
+          await navigator.clipboard.writeText(value);
+          const oldText = button.textContent;
+          button.textContent = "已复制";
+          setTimeout(() => {
+            button.textContent = oldText;
+          }, 1200);
+        } catch (error) {
+          console.error(error);
+          setStatus("复制失败，请手动复制。", "err");
         }
-
-        payNowBtn.disabled = true;
-        setStatus("正在创建付款会话…", "warn");
-
-        const createCheckoutSession = httpsCallable(functions, "createCheckoutSession");
-        const result = await createCheckoutSession({ requestId: latestRequestId });
-        const url = result?.data?.url;
-
-        if (!url) {
-          throw new Error("Missing checkout URL");
-        }
-
-        window.location.href = url;
-      } catch (error) {
-        console.error(error);
-        setStatus("创建付款会话失败。", "err");
-      } finally {
-        payNowBtn.disabled = false;
-      }
+      });
     });
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         setStatus("请登录后提交会员申请。", "muted");
         if (latestReqUnsub) latestReqUnsub();
+        hidePaymentPanel();
         return;
       }
       if (!displayNameInput.value && user.displayName) {
