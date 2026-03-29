@@ -383,10 +383,22 @@
         type === "warn" ? "•" : "●";
     }
 
-    function syncTopActions(user, role, canReviewPaid = false) {
-      const canSeeReceiver = !!user && (user.uid === ADMIN_UID || role === "resident" || role === "admin");
+    function syncTopActions(user, role, canReviewTemp = false, canReviewPaid = false) {
+      const canSeeReceiver = !!user && (
+        user.uid === ADMIN_UID ||
+        role === "admin" ||
+        role === "resident" ||
+        canReviewTemp
+      );
+
+      const canSeePaidReceiver = !!user && (
+        user.uid === ADMIN_UID ||
+        role === "admin" ||
+        canReviewPaid
+      );
+
       receiverLink.classList.toggle("hidden", !canSeeReceiver);
-      paidReceiverLink.classList.toggle("hidden", !canReviewPaid);
+      paidReceiverLink.classList.toggle("hidden", !canSeePaidReceiver);
     }
 
     function setLoggedOutUI() {
@@ -398,10 +410,10 @@
       debugBtn.classList.add("hidden");
       userEmail.textContent = "未登录";
       avatar.textContent = "U";
-      syncTopActions(null, "", false);
+      syncTopActions(null, "", false, false);
     }
 
-    function setLoggedInUI(user, role, hasDoorAccess, canReviewPaid) {
+    function setLoggedInUI(user, role, hasDoorAccess, canReviewTemp, canReviewPaid) {
       loginSection.classList.add("hidden");
       appSection.classList.remove("hidden");
       logoutBtn.classList.remove("hidden");
@@ -409,7 +421,7 @@
       userEmail.textContent = user.email || "Unknown user";
       avatar.textContent = (user.email?.[0] || "U").toUpperCase();
 
-      debugBtn.classList.toggle("hidden", user.uid !== ADMIN_UID);
+      debugBtn.classList.toggle("hidden", !(user.uid === ADMIN_UID || role === "admin"));
 
       if (hasDoorAccess) {
         buttonPanel.classList.remove("hidden");
@@ -419,7 +431,7 @@
         restrictedPanel.classList.remove("hidden");
       }
 
-      syncTopActions(user, role || "", canReviewPaid);
+      syncTopActions(user, role || "", canReviewTemp, canReviewPaid);
     }
 
     async function loadRole(uid) {
@@ -613,16 +625,25 @@
       const role = await loadRole(user.uid);
       const userAccess = await loadUserAccess(user.uid);
 
+      let canReviewTemp = false;
       let canReviewPaid = false;
+
+      try {
+        const tempReviewSnap = await get(ref(db, `users/${user.uid}/canReviewTemporaryAccess`));
+        canReviewTemp = user.uid === ADMIN_UID || role === "admin" || tempReviewSnap.val() === true;
+      } catch {
+        canReviewTemp = user.uid === ADMIN_UID || role === "admin";
+      }
+
       try {
         const paidReviewSnap = await get(ref(db, `users/${user.uid}/canReviewPaidAccess`));
-        canReviewPaid = user.uid === ADMIN_UID || paidReviewSnap.val() === true;
+        canReviewPaid = user.uid === ADMIN_UID || role === "admin" || paidReviewSnap.val() === true;
       } catch {
-        canReviewPaid = user.uid === ADMIN_UID;
+        canReviewPaid = user.uid === ADMIN_UID || role === "admin";
       }
 
       const hasDoorAccess = computeDoorAccess(role, userAccess);
-      setLoggedInUI(user, role, hasDoorAccess, canReviewPaid);
+      setLoggedInUI(user, role, hasDoorAccess, canReviewTemp, canReviewPaid);
 
       if (hasDoorAccess) {
         setStatus("已登录，门禁权限可用。", "ok");
@@ -637,7 +658,7 @@
     });
 
     loadAutoHangupPreference();
-    syncTopActions(null, "", false);
+    syncTopActions(null, "", false, false);
   </script>
 </body>
 </html>
