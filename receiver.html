@@ -32,6 +32,10 @@
     .request h4{margin:0 0 8px;font-size:18px}
     .meta{font-size:13px;color:var(--muted);line-height:1.6}
     .empty{color:var(--muted)}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-bottom:10px}
+    .pill.pending{background:rgba(255,231,173,0.16);color:var(--warn)}
+    .pill.approved{background:rgba(200,247,215,0.14);color:var(--ok)}
+    .pill.rejected,.pill.expired{background:rgba(255,210,210,0.14);color:var(--err)}
   </style>
 </head>
 <body>
@@ -60,6 +64,11 @@
       </div>
 
       <div class="card">
+        <h3>已处理申请</h3>
+        <div id="historyBox" class="grid"></div>
+      </div>
+
+      <div class="card">
         <h3>日志</h3>
         <div id="logBox" class="status muted">Ready</div>
       </div>
@@ -69,7 +78,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -93,6 +102,7 @@
     const mainArea = document.getElementById("mainArea");
     const deviceStateBox = document.getElementById("deviceStateBox");
     const requestsBox = document.getElementById("requestsBox");
+    const historyBox = document.getElementById("historyBox");
     const logBox = document.getElementById("logBox");
 
     function log(msg, type = "muted") {
@@ -113,18 +123,26 @@
       return new Date(ts).toLocaleString();
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      }[ch]));
+    }
+
+    function statusClass(status) {
+      if (status === "approved") return "approved";
+      if (status === "rejected") return "rejected";
+      if (status === "expired") return "expired";
+      return "pending";
+    }
+
     function renderDeviceState(state) {
       if (!state) {
         deviceStateBox.textContent = "未读取到设备状态。";
         return;
       }
       const online = !!state.online && (Date.now() - (state.lastSeen || 0) < 10000);
-      deviceStateBox.innerHTML = `在线：${online ? "是" : "否"}
-忙碌：${state.busy ? "是" : "否"}
-话筒：${state.micState || "idle"}
-通话中：${state.callActive ? "是" : "否"}
-最近动作：${state.lastAction || "-"}
-错误：${state.error || "无"}`;
+      deviceStateBox.innerHTML = `在线：${online ? "是" : "否"}\n忙碌：${state.busy ? "是" : "否"}\n话筒：${state.micState || "idle"}\n通话中：${state.callActive ? "是" : "否"}\n最近动作：${state.lastAction || "-"}\n错误：${state.error || "无"}`;
     }
 
     async function loadUserMeta(uid) {
@@ -205,9 +223,16 @@
       log(`已拒绝申请 ${reqId}。`, "warn");
     }
 
-    function renderRequests(data, reviewAllowed) {
-      const entries = Object.entries(data || {}).filter(([, v]) => (v?.status || "pending") === "pending");
-      entries.sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
+    async function deleteRequest(reqId, reqData) {
+      const updates = {};
+      updates[`temporaryAccessRequests/${reqId}`] = null;
+      if (reqData?.sessionToken) updates[`temporaryRequestSessions/${reqData.sessionToken}`] = null;
+      if (reqData?.grantToken) updates[`temporaryAccessGrants/${reqData.grantToken}`] = null;
+      await update(ref(db), updates);
+      log(`已删除申请 ${reqId}。`, "warn");
+    }
+
+    function renderPendingRequests(entries, reviewAllowed) {
       if (!entries.length) {
         requestsBox.innerHTML = '<div class="empty">当前没有待审批申请。</div>';
         return;
@@ -217,8 +242,9 @@
         const card = document.createElement("div");
         card.className = "request";
         card.innerHTML = `
-          <h4>${req.name || "未命名申请"}</h4>
-          <div class="meta">联系方式：${req.contact || "-"}<br>来访原因：${req.reason || "-"}<br>备注：${req.note || "-"}<br>提交时间：${fmtTime(req.createdAt)}</div>
+          <div class="pill pending">待审批</div>
+          <h4>${escapeHtml(req.name || "未命名申请")}</h4>
+          <div class="meta">联系方式：${escapeHtml(req.contact || "-")}<br>来访原因：${escapeHtml(req.reason || "-")}<br>备注：${escapeHtml(req.note || "-")}<br>提交时间：${fmtTime(req.createdAt)}</div>
           <div class="grid" style="margin-top:12px;">
             <div>
               <label>时长数值</label>
@@ -268,6 +294,40 @@
       }
     }
 
+    function renderHistory(entries, reviewAllowed) {
+      if (!entries.length) {
+        historyBox.innerHTML = '<div class="empty">当前没有已处理申请。</div>';
+        return;
+      }
+      historyBox.innerHTML = "";
+      for (const [reqId, req] of entries) {
+        const card = document.createElement("div");
+        card.className = "request";
+        const status = req.status || "unknown";
+        const resultText = req.result?.type ? `${req.result.type}${req.result?.expiresAt ? `，到期：${fmtTime(req.result.expiresAt)}` : ""}` : "-";
+        card.innerHTML = `
+          <div class="pill ${statusClass(status)}">${escapeHtml(status)}</div>
+          <h4>${escapeHtml(req.name || "未命名申请")}</h4>
+          <div class="meta">联系方式：${escapeHtml(req.contact || "-")}<br>来访原因：${escapeHtml(req.reason || "-")}<br>备注：${escapeHtml(req.note || "-")}<br>提交时间：${fmtTime(req.createdAt)}<br>批准时间：${fmtTime(req.approvedAt)}<br>拒绝时间：${fmtTime(req.rejectedAt)}<br>grantToken：${escapeHtml(req.grantToken || "-")}<br>处理结果：${escapeHtml(resultText)}</div>
+          <div class="row" style="margin-top:12px;">
+            <button data-action="delete" class="danger">删除记录</button>
+          </div>
+        `;
+        const deleteBtn = card.querySelector('[data-action="delete"]');
+        deleteBtn.disabled = !reviewAllowed;
+        deleteBtn.addEventListener("click", async () => {
+          if (!confirm(`确定删除申请 ${reqId} 吗？相关 session / grant 也会一并删除。`)) return;
+          try {
+            await deleteRequest(reqId, req);
+          } catch (error) {
+            console.error(error);
+            log(`删除申请 ${reqId} 失败。`, "err");
+          }
+        });
+        historyBox.appendChild(card);
+      }
+    }
+
     loginBtn.addEventListener("click", async () => {
       try {
         await signInWithPopup(auth, provider);
@@ -303,7 +363,12 @@
 
       const reviewAllowed = canReview(meta, user);
       onValue(ref(db, "temporaryAccessRequests"), (snap) => {
-        renderRequests(snap.val(), reviewAllowed);
+        const all = Object.entries(snap.val() || {});
+        all.sort((a, b) => ((b[1]?.createdAt || 0) - (a[1]?.createdAt || 0)));
+        const pending = all.filter(([, v]) => (v?.status || "pending") === "pending");
+        const handled = all.filter(([, v]) => (v?.status || "pending") !== "pending");
+        renderPendingRequests(pending, reviewAllowed);
+        renderHistory(handled, reviewAllowed);
       });
     });
   </script>
