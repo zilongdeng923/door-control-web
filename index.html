@@ -412,7 +412,7 @@
       debugBtn.classList.add("hidden");
       userEmail.textContent = "未登录";
       avatar.textContent = "U";
-      syncTopActions(null, "", false, false);
+      syncTopActions(null, "", false, false, false);
     }
 
     function setLoggedInUI(user, role, hasDoorAccess, canReviewTemp, canReviewPaid) {
@@ -433,7 +433,7 @@
         restrictedPanel.classList.remove("hidden");
       }
 
-      syncTopActions(user, role || "", canReviewTemp, canReviewPaid);
+      syncTopActions(user, role || "", hasDoorAccess, canReviewTemp, canReviewPaid);
     }
 
     async function loadRole(uid) {
