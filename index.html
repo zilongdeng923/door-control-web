@@ -57,7 +57,18 @@
       position: relative; z-index: 1; width: 100%; max-width: 430px;
       min-height: calc(100vh - 48px); display: flex; flex-direction: column;
     }
-    .hero { text-align: center; padding-top: 8px; }
+    .hero { text-align: center; padding-top: 8px; position: relative; }
+    .top-actions {
+      position: absolute; top: 0; right: 0;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .icon-link {
+      width: 42px; height: 42px; display: grid; place-items: center;
+      border-radius: 14px; text-decoration: none; color: var(--text);
+      background: rgba(7,13,28,0.34); border:1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      font-size: 18px;
+    }
     .chips { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
     .chip {
       padding:10px 14px; border-radius:999px; font-size:12px; color:#c8d6f0;
@@ -196,6 +207,10 @@
 <body>
   <main class="app">
     <section class="hero">
+      <div class="top-actions">
+        <a id="requestLink" class="icon-link hidden" href="./request.html" title="临时访问申请">✉</a>
+        <a id="receiverLink" class="icon-link hidden" href="./receiver.html" title="接收端">📥</a>
+      </div>
       <div class="chips">
         <div class="chip">Remote Access Ready</div>
         <div class="chip">Realtime Synced</div>
@@ -210,18 +225,7 @@
     <section class="space"></section>
 
     <section class="controls">
-      <section class="panel nav-panel" style="margin-bottom:14px;">
-        <div class="nav-grid">
-          <a class="nav-btn secondary" href="./request.html">
-            临时访问申请
-            <span class="sub">无需登录即可提交来访申请</span>
-          </a>
-          <a class="nav-btn secondary" href="./receiver.html">
-            接收端
-            <span class="sub">住户处理临时访问与访客开门请求</span>
-          </a>
-        </div>
-      </section>
+      
 
       <section id="loginSection" class="panel login-panel">
         <button id="loginBtn" class="btn btn-login">使用 Google 登录</button>
@@ -333,6 +337,8 @@
     const avatar = document.getElementById("avatar");
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
+    const requestLink = document.getElementById("requestLink");
+    const receiverLink = document.getElementById("receiverLink");
 
     let latestDeviceState = null;
     let localBusyGuard = false;
@@ -346,6 +352,12 @@
         type === "warn" ? "•" : "●";
     }
 
+    function syncTopActions(user, role) {
+      requestLink.classList.toggle("hidden", !!user);
+      const canSeeReceiver = !!user && (user.uid === ADMIN_UID || role === "resident" || role === "owner");
+      receiverLink.classList.toggle("hidden", !canSeeReceiver);
+    }
+
     function setLoggedOutUI() {
       loginSection.classList.remove("hidden");
       appSection.classList.add("hidden");
@@ -353,15 +365,26 @@
       debugBtn.classList.add("hidden");
       userEmail.textContent = "未登录";
       avatar.textContent = "U";
+      syncTopActions(null, "");
     }
 
-    function setLoggedInUI(user) {
+    function setLoggedInUI(user, role) {
       loginSection.classList.add("hidden");
       appSection.classList.remove("hidden");
       logoutBtn.classList.remove("hidden");
       userEmail.textContent = user.email || "Unknown user";
       avatar.textContent = (user.email?.[0] || "U").toUpperCase();
       debugBtn.classList.toggle("hidden", user.uid !== ADMIN_UID);
+      syncTopActions(user, role || "");
+    }
+
+    async function loadRole(uid) {
+      try {
+        const snap = await get(ref(db, `users/${uid}/role`));
+        return snap.val() || "";
+      } catch {
+        return "";
+      }
     }
 
     function loadAutoHangupPreference() {
@@ -500,9 +523,13 @@
       window.location.href = "./admin.html";
     });
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) setLoggedInUI(user);
-      else setLoggedOutUI();
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const role = await loadRole(user.uid);
+        setLoggedInUI(user, role);
+      } else {
+        setLoggedOutUI();
+      }
     });
 
     onValue(ref(db, "deviceState"), (snapshot) => {
@@ -511,6 +538,7 @@
     });
 
     loadAutoHangupPreference();
+    syncTopActions(null, "");
   </script>
 </body>
 </html>
