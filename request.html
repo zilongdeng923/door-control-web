@@ -51,6 +51,13 @@
     .status-text { font-size:15px; line-height:1.65; word-break:break-word; }
     .ok { color: var(--ok); } .err { color: var(--err); } .warn { color: var(--warn); } .muted { color: var(--muted); }
     .hint { margin-top: 14px; color: var(--muted); font-size: 13px; line-height: 1.7; padding: 0 4px; }
+    .ghost-btn {
+      width:100%; border:none; cursor:pointer; color:var(--text); padding:14px 16px; border-radius:18px; font-size:15px; font-weight:700;
+      transition: transform .16s ease, opacity .2s ease, filter .2s ease;
+      background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); margin-top:12px;
+    }
+    .ghost-btn:active { transform: scale(0.985); }
+    .ghost-btn.hidden { display:none; }
   </style>
 </head>
 <body>
@@ -96,9 +103,10 @@
 
     <section class="status-panel">
       <div class="status-icon" id="statusIcon">●</div>
-      <div>
+      <div style="width:100%;">
         <div class="status-title">Request Status</div>
         <div class="status-text muted" id="statusText">Ready</div>
+        <button id="newRequestBtn" class="ghost-btn hidden" type="button">提交一份新的申请</button>
       </div>
     </section>
   </main>
@@ -129,6 +137,7 @@
     const noteInput = document.getElementById("note");
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
+    const newRequestBtn = document.getElementById("newRequestBtn");
 
     let sessionUnsubscribe = null;
 
@@ -157,6 +166,25 @@
       return localStorage.getItem(REQUEST_SESSION_KEY) || "";
     }
 
+    function clearStoredSession() {
+      localStorage.removeItem(REQUEST_SESSION_KEY);
+      if (sessionUnsubscribe) {
+        sessionUnsubscribe();
+        sessionUnsubscribe = null;
+      }
+    }
+
+    function showNewRequestButton(show = true) {
+      newRequestBtn.classList.toggle("hidden", !show);
+    }
+
+    function resetToFreshRequest(message = "可以重新提交一份新的申请。", type = "muted") {
+      clearStoredSession();
+      requestForm.reset();
+      showNewRequestButton(true);
+      setStatus(message, type);
+    }
+
     function listenSession(token) {
       if (!token) return;
       if (sessionUnsubscribe) sessionUnsubscribe();
@@ -165,22 +193,24 @@
       sessionUnsubscribe = onValue(sessionRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) {
-          setStatus("未找到已保存的申请会话。", "muted");
+          resetToFreshRequest("之前的申请会话已经失效，请重新提交一份新的申请。", "warn");
           return;
         }
 
         const status = data.status || "pending";
         if (status === "pending") {
+          showNewRequestButton(false);
           setStatus("申请已提交，正在等待住户审核。", "warn");
           return;
         }
 
         if (status === "rejected") {
-          setStatus("申请已被拒绝。", "err");
+          resetToFreshRequest("申请已被拒绝。你可以直接提交一份新的申请。", "err");
           return;
         }
 
         if (status === "approved" && data.grantToken) {
+          showNewRequestButton(false);
           setStatus("申请已通过，正在跳转到临时访问页面…", "ok");
           setTimeout(() => {
             window.location.href = `./guest-access.html?grant=${encodeURIComponent(data.grantToken)}`;
@@ -188,18 +218,29 @@
           return;
         }
 
-        setStatus(`当前状态：${status}`, "muted");
+        if (status === "expired" || status === "used" || status === "invalid") {
+          resetToFreshRequest("这份临时访问资格已经失效，请重新提交一份新的申请。", "warn");
+          return;
+        }
+
+        showNewRequestButton(true);
+        setStatus(`当前状态：${status}。你也可以重新提交一份新的申请。`, "muted");
       }, (error) => {
         console.error(error);
-        setStatus("监听申请状态失败。", "err");
+        resetToFreshRequest("监听申请状态失败。请重新提交一份新的申请。", "err");
       });
     }
+
+    newRequestBtn.addEventListener("click", () => {
+      resetToFreshRequest("已清除旧申请记录，请填写并提交新的申请。", "ok");
+    });
 
     requestForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       submitBtn.disabled = true;
 
       try {
+        showNewRequestButton(false);
         const name = nameInput.value.trim();
         const contact = contactInput.value.trim();
         const reason = reasonInput.value.trim();
@@ -256,10 +297,20 @@
       }
     });
 
-    const existingToken = getStoredSessionToken();
-    if (existingToken) {
-      setStatus("检测到上一次申请记录，正在恢复状态…", "muted");
-      listenSession(existingToken);
+    const url = new URL(window.location.href);
+    const reason = url.searchParams.get("reason") || "";
+    if (reason === "expired" || reason === "invalid" || reason === "used") {
+      resetToFreshRequest("上一份临时访问资格已经失效，请重新提交一份新的申请。", "warn");
+      url.searchParams.delete("reason");
+      history.replaceState(null, "", url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""));
+    } else {
+      const existingToken = getStoredSessionToken();
+      if (existingToken) {
+        setStatus("检测到上一次申请记录，正在恢复状态…", "muted");
+        listenSession(existingToken);
+      } else {
+        showNewRequestButton(false);
+      }
     }
   </script>
 </body>
