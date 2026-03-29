@@ -162,26 +162,22 @@
 
       try {
         const reqRef = ref(db, `guestDoorRequests/${grantToken}`);
-        const existing = await get(reqRef);
         const now = Date.now();
         const expired = (currentGrant.expiresAt || 0) <= now;
         const noUsesLeft = (currentGrant.remainingUses || 0) <= 0;
-
+        
         if (expired || noUsesLeft || currentGrant.status !== "active") {
           actionStatus.textContent = "当前授权已不可用。";
           return;
         }
-
-        if (existing.exists() && existing.val()?.status === "pending") {
-          actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
-          return;
-        }
-
+        
         await set(reqRef, {
           createdAt: now,
           status: "pending",
           processedAt: 0
         });
+        
+        actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
 
         actionStatus.textContent = "开门请求已提交，请等待接收端处理。";
       } catch (error) {
