@@ -163,7 +163,7 @@
       updates[`paidAccessRequests/${reqId}/status`] = "approved_waiting_payment";
       updates[`paidAccessRequests/${reqId}/approvedBy`] = user.uid;
       updates[`paidAccessRequests/${reqId}/approvedAt`] = now;
-      updates[`paidAccessRequests/${reqId}/checkout/provider`] = "manual_v1";
+      updates[`paidAccessRequests/${reqId}/checkout/provider`] = "manual_multi_payment";
       updates[`paidAccessRequests/${reqId}/checkout/status`] = "waiting_manual_payment";
 
       await update(ref(db), updates);
@@ -226,6 +226,36 @@
 
       await update(ref(db), updates);
       log(`已确认付款并发放授权：${reqId}`, "ok");
+    }
+
+    async function removeProcessedRecord(reqId, req) {
+      const updates = {};
+      const grantId = req?.grantId || "";
+      const uid = req?.uid || "";
+
+      updates[`paidAccessRequests/${reqId}`] = null;
+
+      if (grantId) {
+        updates[`paidAccessGrants/${grantId}`] = null;
+      }
+
+      if (uid) {
+        const userAccessSnap = await get(ref(db, `userAccess/${uid}`));
+        const userAccess = userAccessSnap.val() || null;
+
+        if (!grantId || (userAccess && userAccess.paidGrantId === grantId)) {
+          updates[`userAccess/${uid}`] = {
+            membershipActive: false,
+            membershipType: "",
+            paidGrantId: "",
+            paidUntil: 0,
+            residentPending: false
+          };
+        }
+      }
+
+      await update(ref(db), updates);
+      log(`已删除记录并撤销相关会员授权：${reqId}`, "warn");
     }
 
     function renderPending(entries, reviewAllowed) {
@@ -319,7 +349,7 @@
       }
     }
 
-    function renderHistory(entries) {
+    function renderHistory(entries, reviewAllowed) {
       if (!entries.length) {
         historyBox.innerHTML = '<div class="empty">当前没有已处理的会员记录。</div>';
         return;
@@ -342,7 +372,23 @@
             grantId：${escapeHtml(req.grantId || "-")}<br>
             生效到期：${escapeHtml(until)}
           </div>
+          <div class="row" style="margin-top:12px;">
+            <button data-action="remove" class="danger">删除并撤销授权</button>
+          </div>
         `;
+
+        const removeBtn = card.querySelector('[data-action="remove"]');
+        removeBtn.disabled = !reviewAllowed;
+
+        removeBtn.addEventListener("click", async () => {
+          try {
+            await removeProcessedRecord(reqId, req);
+          } catch (error) {
+            console.error(error);
+            log(`删除/撤销 ${reqId} 失败。`, "err");
+          }
+        });
+
         historyBox.appendChild(card);
       }
     }
@@ -395,7 +441,7 @@
 
         renderPending(pending, reviewAllowed);
         renderWaiting(waiting, reviewAllowed);
-        renderHistory(history);
+        renderHistory(history, reviewAllowed);
       }, (error) => {
         console.error(error);
         log("监听会员申请失败。", "err");
