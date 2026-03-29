@@ -208,7 +208,8 @@
   <main class="app">
     <section class="hero">
       <div class="top-actions">
-        <a id="receiverLink" class="icon-link hidden" href="./receiver.html" title="接收端">📥</a>
+        <a id="receiverLink" class="icon-link hidden" href="./receiver.html" title="临时访问审批">📥</a>
+        <a id="paidReceiverLink" class="icon-link hidden" href="./paid-receiver.html" title="会员审批">💳</a>
       </div>
       <div class="chips">
         <div class="chip">Remote Access Ready</div>
@@ -224,10 +225,17 @@
     <section class="space"></section>
 
     <section class="controls">
-      
-
       <section id="loginSection" class="panel login-panel">
-        <a id="guestApplyBtn" class="btn nav-btn secondary" href="./request.html" style="margin-bottom:12px;">申请临时访问<span class="sub">无需登录，提交申请后等待住户审批</span></a>
+        <a id="guestApplyBtn" class="btn nav-btn secondary" href="./request.html" style="margin-bottom:12px;">
+          申请临时访问
+          <span class="sub">无需登录，提交申请后等待住户审批</span>
+        </a>
+
+        <a id="memberApplyBtn" class="btn nav-btn secondary" href="./membership-request.html" style="margin-bottom:12px;">
+          申请会员
+          <span class="sub">支持设备维护并申请长期使用权限</span>
+        </a>
+
         <button id="loginBtn" class="btn btn-login">使用 Google 登录</button>
       </section>
 
@@ -240,7 +248,27 @@
           </div>
         </div>
 
-        <div class="panel button-panel">
+        <section id="restrictedPanel" class="panel nav-panel hidden">
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px;">当前账号还没有门禁权限</div>
+          <div style="color:var(--muted);line-height:1.75;font-size:14px;">
+            你已经登录成功，但当前账号不在住户/管理员名单里，也还没有有效会员权限。<br />
+            你可以先申请会员，或联系管理员为你开通权限。
+          </div>
+
+          <div class="nav-grid" style="margin-top:14px;">
+            <a class="btn nav-btn secondary" href="./membership-request.html">
+              申请会员
+              <span class="sub">支持设备维护并申请长期使用权限</span>
+            </a>
+
+            <a class="btn nav-btn secondary" href="./request.html">
+              申请临时访问
+              <span class="sub">无需长期权限时，可先申请一次性访问</span>
+            </a>
+          </div>
+        </section>
+
+        <div class="panel button-panel" id="buttonPanel">
           <div class="primary-row">
             <button id="openBtn" class="btn btn-open">
               <span class="btn-open-title">OPEN DOOR</span>
@@ -326,6 +354,9 @@
 
     const loginSection = document.getElementById("loginSection");
     const appSection = document.getElementById("appSection");
+    const restrictedPanel = document.getElementById("restrictedPanel");
+    const buttonPanel = document.getElementById("buttonPanel");
+
     const loginBtn = document.getElementById("loginBtn");
     const openBtn = document.getElementById("openBtn");
     const pickupBtn = document.getElementById("pickupBtn");
@@ -338,6 +369,7 @@
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
     const receiverLink = document.getElementById("receiverLink");
+    const paidReceiverLink = document.getElementById("paidReceiverLink");
 
     let latestDeviceState = null;
     let localBusyGuard = false;
@@ -351,29 +383,43 @@
         type === "warn" ? "•" : "●";
     }
 
-    function syncTopActions(user, role) {
+    function syncTopActions(user, role, canReviewPaid = false) {
       const canSeeReceiver = !!user && (user.uid === ADMIN_UID || role === "resident" || role === "owner");
       receiverLink.classList.toggle("hidden", !canSeeReceiver);
+      paidReceiverLink.classList.toggle("hidden", !canReviewPaid);
     }
 
     function setLoggedOutUI() {
       loginSection.classList.remove("hidden");
       appSection.classList.add("hidden");
+      restrictedPanel.classList.add("hidden");
+      buttonPanel.classList.remove("hidden");
       logoutBtn.classList.add("hidden");
       debugBtn.classList.add("hidden");
       userEmail.textContent = "未登录";
       avatar.textContent = "U";
-      syncTopActions(null, "");
+      syncTopActions(null, "", false);
     }
 
-    function setLoggedInUI(user, role) {
+    function setLoggedInUI(user, role, hasDoorAccess, canReviewPaid) {
       loginSection.classList.add("hidden");
       appSection.classList.remove("hidden");
       logoutBtn.classList.remove("hidden");
+
       userEmail.textContent = user.email || "Unknown user";
       avatar.textContent = (user.email?.[0] || "U").toUpperCase();
+
       debugBtn.classList.toggle("hidden", user.uid !== ADMIN_UID);
-      syncTopActions(user, role || "");
+
+      if (hasDoorAccess) {
+        buttonPanel.classList.remove("hidden");
+        restrictedPanel.classList.add("hidden");
+      } else {
+        buttonPanel.classList.add("hidden");
+        restrictedPanel.classList.remove("hidden");
+      }
+
+      syncTopActions(user, role || "", canReviewPaid);
     }
 
     async function loadRole(uid) {
@@ -383,6 +429,21 @@
       } catch {
         return "";
       }
+    }
+
+    async function loadUserAccess(uid) {
+      try {
+        const snap = await get(ref(db, `userAccess/${uid}`));
+        return snap.val() || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function computeDoorAccess(role, userAccess) {
+      if (role === "owner" || role === "resident") return true;
+      if (userAccess?.membershipActive === true && (userAccess?.paidUntil || 0) > Date.now()) return true;
+      return false;
     }
 
     function loadAutoHangupPreference() {
@@ -428,10 +489,17 @@
     async function sendCommand(commandName, extra = {}) {
       const user = auth.currentUser;
       if (!user) throw new Error("not_logged_in");
+
+      const role = await loadRole(user.uid);
+      const userAccess = await loadUserAccess(user.uid);
+      const hasDoorAccess = computeDoorAccess(role, userAccess);
+      if (!hasDoorAccess) throw new Error("no_door_access");
+
       const cmdRef = ref(db, `commands/${commandName}`);
       const snap = await get(cmdRef);
       const cur = snap.val();
       if (cur?.pending === true) throw new Error("command_busy");
+
       const requestId = `${commandName}_${Date.now()}`;
       await set(cmdRef, {
         pending: true,
@@ -475,7 +543,12 @@
         await sendCommand("open", { autoHangup: autoHangupToggle.checked });
       } catch (err) {
         console.error(err);
-        setStatus("发送一键开门指令失败。", "err");
+        setStatus(
+          err?.message === "no_door_access"
+            ? "当前账号还没有门禁权限。"
+            : "发送一键开门指令失败。",
+          "err"
+        );
       } finally {
         setTimeout(() => {
           localBusyGuard = false;
@@ -492,7 +565,12 @@
         await sendCommand(callActive ? "hangup" : "pickup");
       } catch (err) {
         console.error(err);
-        setStatus("发送接听/挂机指令失败。", "err");
+        setStatus(
+          err?.message === "no_door_access"
+            ? "当前账号还没有门禁权限。"
+            : "发送接听/挂机指令失败。",
+          "err"
+        );
       } finally {
         setTimeout(() => {
           localBusyGuard = false;
@@ -508,7 +586,12 @@
         await sendCommand("unlock");
       } catch (err) {
         console.error(err);
-        setStatus("发送开门指令失败。", "err");
+        setStatus(
+          err?.message === "no_door_access"
+            ? "当前账号还没有门禁权限。"
+            : "发送开门指令失败。",
+          "err"
+        );
       } finally {
         setTimeout(() => {
           localBusyGuard = false;
@@ -522,11 +605,29 @@
     });
 
     onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const role = await loadRole(user.uid);
-        setLoggedInUI(user, role);
-      } else {
+      if (!user) {
         setLoggedOutUI();
+        return;
+      }
+
+      const role = await loadRole(user.uid);
+      const userAccess = await loadUserAccess(user.uid);
+
+      let canReviewPaid = false;
+      try {
+        const paidReviewSnap = await get(ref(db, `users/${user.uid}/canReviewPaidAccess`));
+        canReviewPaid = user.uid === ADMIN_UID || paidReviewSnap.val() === true;
+      } catch {
+        canReviewPaid = user.uid === ADMIN_UID;
+      }
+
+      const hasDoorAccess = computeDoorAccess(role, userAccess);
+      setLoggedInUI(user, role, hasDoorAccess, canReviewPaid);
+
+      if (hasDoorAccess) {
+        setStatus("已登录，门禁权限可用。", "ok");
+      } else {
+        setStatus("已登录，但当前账号还没有门禁权限。", "warn");
       }
     });
 
@@ -536,7 +637,7 @@
     });
 
     loadAutoHangupPreference();
-    syncTopActions(null, "");
+    syncTopActions(null, "", false);
   </script>
 </body>
 </html>
