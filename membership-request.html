@@ -51,10 +51,10 @@
     <section class="hero">
       <div class="chips">
         <div class="chip">Member Support</div>
-        <div class="chip">Manual Payment v1</div>
+        <div class="chip">Stripe Checkout</div>
       </div>
       <h1 class="title">会员申请</h1>
-      <p class="sub">这不是强制收费入口，而是一个支持设备维护与长期使用的申请页。<br>当前版本为审批后付款、付款确认后生效。</p>
+      <p class="sub">支持设备维护与长期使用权限。<br>审批通过后可以直接进入 Stripe 付款。</p>
     </section>
 
     <section class="card">
@@ -112,6 +112,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
     import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getFunctions, httpsCallable, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-functions.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -126,7 +127,15 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+    const functions = getFunctions(app);
     const provider = new GoogleAuthProvider();
+
+    if (
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "localhost"
+    ) {
+      connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+    }
 
     const requestForm = document.getElementById("requestForm");
     const submitBtn = document.getElementById("submitBtn");
@@ -137,8 +146,10 @@
     const priceText = document.getElementById("priceText");
     const priceDesc = document.getElementById("priceDesc");
     const statusText = document.getElementById("statusText");
+    const payNowBtn = document.getElementById("payNowBtn");
 
     let latestReqUnsub = null;
+    let latestRequestId = "";
 
     function calcMembershipAmountPence(days) {
       const safeDays = Math.max(1, Math.floor(Number(days) || 1));
@@ -187,55 +198,65 @@
       if (latestReqUnsub) latestReqUnsub();
 
       const requestsRef = ref(db, "paidAccessRequests");
-      latestReqUnsub = onValue(requestsRef, (snap) => {
-        const all = snap.val() || {};
-        let latest = null;
-        let latestId = "";
-        for (const [reqId, req] of Object.entries(all)) {
-          if (req.uid !== uid) continue;
-          if (!latest || (req.createdAt || 0) > (latest.createdAt || 0)) {
-            latest = req;
-            latestId = reqId;
+      latestReqUnsub = onValue(
+        requestsRef,
+        (snap) => {
+          const all = snap.val() || {};
+          let latest = null;
+          let latestId = "";
+
+          for (const [reqId, req] of Object.entries(all)) {
+            if (req.uid !== uid) continue;
+            if (!latest || (req.createdAt || 0) > (latest.createdAt || 0)) {
+              latest = req;
+              latestId = reqId;
+            }
           }
-        }
-        if (!latest) {
-          setStatus("还没有找到你的会员申请记录。", "muted");
-          return;
-        }
 
-        const amount = latest.pricing?.amountPence || 0;
-        const status = latest.status || "pending";
-        const pieces = [
-          `最新申请：${latestId}`,
-          `类型：${latest.type === "resident_join" ? "成为住户" : "普通会员"}`,
-          `金额：${penceToPounds(amount)}`,
-          `状态：${status}`
-        ];
+          latestRequestId = latestId;
+          payNowBtn.style.display = "none";
 
-        if (status === "approved_waiting_payment") {
-          pieces.push("你的申请已经审批通过，等待付款确认。请联系管理员完成付款。");
-          setStatus(pieces.join("\n"), "warn");
-          return;
+          if (!latest) {
+            setStatus("还没有找到你的会员申请记录。", "muted");
+            return;
+          }
+
+          const amount = latest.pricing?.amountPence || 0;
+          const status = latest.status || "pending";
+          const pieces = [
+            `最新申请：${latestId}`,
+            `类型：${latest.type === "resident_join" ? "成为住户" : "普通会员"}`,
+            `金额：${penceToPounds(amount)}`,
+            `状态：${status}`
+          ];
+
+          if (status === "approved_waiting_payment") {
+            pieces.push("你的申请已经审批通过，可以进入 Stripe 付款页面完成支付。");
+            setStatus(pieces.join("\n"), "warn");
+            payNowBtn.style.display = "";
+            return;
+          }
+
+          if (status === "paid") {
+            const until = latest.result?.expiresAt ? new Date(latest.result.expiresAt).toLocaleString() : "-";
+            pieces.push(`已生效至：${until}`);
+            setStatus(pieces.join("\n"), "ok");
+            return;
+          }
+
+          if (status === "rejected") {
+            pieces.push("申请已被拒绝。");
+            setStatus(pieces.join("\n"), "err");
+            return;
+          }
+
+          setStatus(pieces.join("\n"), status === "pending" ? "warn" : "muted");
+        },
+        (error) => {
+          console.error(error);
+          setStatus("监听会员申请状态失败。", "err");
         }
-
-        if (status === "paid") {
-          const until = latest.result?.expiresAt ? new Date(latest.result.expiresAt).toLocaleString() : "-";
-          pieces.push(`已生效至：${until}`);
-          setStatus(pieces.join("\n"), "ok");
-          return;
-        }
-
-        if (status === "rejected") {
-          pieces.push("申请已被拒绝。");
-          setStatus(pieces.join("\n"), "err");
-          return;
-        }
-
-        setStatus(pieces.join("\n"), status === "pending" ? "warn" : "muted");
-      }, (error) => {
-        console.error(error);
-        setStatus("监听会员申请状态失败。", "err");
-      });
+      );
     }
 
     requestType.addEventListener("change", updatePricePreview);
@@ -285,7 +306,7 @@
             note: noteInput.value.trim()
           },
           checkout: {
-            provider: "manual_v1",
+            provider: "stripe_checkout",
             sessionId: "",
             url: "",
             status: "not_started"
@@ -304,6 +325,33 @@
         setStatus("提交会员申请失败。", "err");
       } finally {
         submitBtn.disabled = false;
+      }
+    });
+
+    payNowBtn.addEventListener("click", async () => {
+      try {
+        if (!latestRequestId) {
+          setStatus("没有找到可付款的申请记录。", "err");
+          return;
+        }
+
+        payNowBtn.disabled = true;
+        setStatus("正在创建付款会话…", "warn");
+
+        const createCheckoutSession = httpsCallable(functions, "createCheckoutSession");
+        const result = await createCheckoutSession({ requestId: latestRequestId });
+        const url = result?.data?.url;
+
+        if (!url) {
+          throw new Error("Missing checkout URL");
+        }
+
+        window.location.href = url;
+      } catch (error) {
+        console.error(error);
+        setStatus("创建付款会话失败。", "err");
+      } finally {
+        payNowBtn.disabled = false;
       }
     });
 
