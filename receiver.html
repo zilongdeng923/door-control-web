@@ -14,25 +14,45 @@
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{margin:0;min-height:100%;font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
-    body{padding:24px 18px;background:radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%)}
+    body{
+      padding:24px 18px;
+      background:
+        radial-gradient(circle at center, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.48) 58%, rgba(0,0,0,0.76) 100%),
+        radial-gradient(circle at center, rgba(96,165,250,0.18) 0%, rgba(96,165,250,0.06) 24%, rgba(0,0,0,0) 48%);
+    }
     .wrap{max-width:980px;margin:0 auto}
     .title{font-size:38px;font-weight:800;margin:0 0 8px}
     .sub{margin:0 0 18px;color:var(--muted);line-height:1.7}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:18px;backdrop-filter:blur(18px);box-shadow:var(--shadow);margin-bottom:16px}
+    .card{
+      background:var(--panel);border:1px solid var(--border);border-radius:26px;padding:18px;
+      backdrop-filter:blur(18px);box-shadow:var(--shadow);margin-bottom:16px
+    }
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
     .status{line-height:1.7;white-space:pre-wrap}
     .ok{color:var(--ok)} .err{color:var(--err)} .warn{color:var(--warn)} .muted{color:var(--muted)}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select{width:100%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--text);font-size:15px}
-    button,a.btn{border:none;border-radius:16px;padding:12px 16px;cursor:pointer;font-weight:700;color:white;background:linear-gradient(135deg,var(--blue1),var(--blue2));text-decoration:none;display:inline-block}
+    input,select{
+      width:100%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);color:var(--text);font-size:15px
+    }
+    button,a.btn{
+      border:none;border-radius:16px;padding:12px 16px;cursor:pointer;font-weight:700;color:white;
+      background:linear-gradient(135deg,var(--blue1),var(--blue2));text-decoration:none;display:inline-block
+    }
     .secondary{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1)}
     .danger{background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.22)}
-    .request{padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03)}
+    .request{
+      padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.03)
+    }
     .request h4{margin:0 0 8px;font-size:18px}
     .meta{font-size:13px;color:var(--muted);line-height:1.6}
     .empty{color:var(--muted)}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-bottom:10px}
+    .pill{
+      display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;
+      font-weight:700;margin-bottom:10px
+    }
     .pill.pending{background:rgba(255,231,173,0.16);color:var(--warn)}
     .pill.approved{background:rgba(200,247,215,0.14);color:var(--ok)}
     .pill.rejected,.pill.expired{background:rgba(255,210,210,0.14);color:var(--err)}
@@ -78,7 +98,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -142,7 +162,13 @@
         return;
       }
       const online = !!state.online && (Date.now() - (state.lastSeen || 0) < 10000);
-      deviceStateBox.innerHTML = `在线：${online ? "是" : "否"}\n忙碌：${state.busy ? "是" : "否"}\n话筒：${state.micState || "idle"}\n通话中：${state.callActive ? "是" : "否"}\n最近动作：${state.lastAction || "-"}\n错误：${state.error || "无"}`;
+      deviceStateBox.innerHTML =
+        `在线：${online ? "是" : "否"}\n` +
+        `忙碌：${state.busy ? "是" : "否"}\n` +
+        `话筒：${state.micState || "idle"}\n` +
+        `通话中：${state.callActive ? "是" : "否"}\n` +
+        `最近动作：${state.lastAction || "-"}\n` +
+        `错误：${state.error || "无"}`;
     }
 
     async function loadUserMeta(uid) {
@@ -150,12 +176,22 @@
       return snap.val() || {};
     }
 
-    function canEnter(role, user) {
-      return !!user && (user.uid === ADMIN_UID || role === "owner" || role === "resident");
+    function canEnter(role, meta, user) {
+      return !!user && (
+        user.uid === ADMIN_UID ||
+        role === "admin" ||
+        role === "resident" ||
+        meta.canReviewTemporaryAccess === true
+      );
     }
 
     function canReview(meta, user) {
-      return !!user && (user.uid === ADMIN_UID || meta.canReviewTemporaryAccess === true);
+      return !!user && (
+        user.uid === ADMIN_UID ||
+        meta.role === "admin" ||
+        meta.role === "resident" ||
+        meta.canReviewTemporaryAccess === true
+      );
     }
 
     async function approveRequest(reqId, reqData, durationValue, durationUnit, maxUses) {
@@ -206,9 +242,11 @@
       if (!user) return;
       const now = Date.now();
       const updates = {};
+
       updates[`temporaryAccessRequests/${reqId}/status`] = "rejected";
       updates[`temporaryAccessRequests/${reqId}/rejectedBy`] = user.uid;
       updates[`temporaryAccessRequests/${reqId}/rejectedAt`] = now;
+
       if (reqData.sessionToken) {
         updates[`temporaryRequestSessions/${reqData.sessionToken}`] = {
           requestId: reqId,
@@ -219,6 +257,7 @@
           updatedAt: now
         };
       }
+
       await update(ref(db), updates);
       log(`已拒绝申请 ${reqId}。`, "warn");
     }
@@ -244,7 +283,12 @@
         card.innerHTML = `
           <div class="pill pending">待审批</div>
           <h4>${escapeHtml(req.name || "未命名申请")}</h4>
-          <div class="meta">联系方式：${escapeHtml(req.contact || "-")}<br>来访原因：${escapeHtml(req.reason || "-")}<br>备注：${escapeHtml(req.note || "-")}<br>提交时间：${fmtTime(req.createdAt)}</div>
+          <div class="meta">
+            联系方式：${escapeHtml(req.contact || "-")}<br>
+            来访原因：${escapeHtml(req.reason || "-")}<br>
+            备注：${escapeHtml(req.note || "-")}<br>
+            提交时间：${fmtTime(req.createdAt)}
+          </div>
           <div class="grid" style="margin-top:12px;">
             <div>
               <label>时长数值</label>
@@ -259,7 +303,7 @@
             </div>
             <div>
               <label>允许开门次数</label>
-              <input type="number" min="1" max="20" value="1" data-role="max-uses" />
+              <input type="number" min="1" max="99" value="1" data-role="max-uses" />
             </div>
           </div>
           <div class="row" style="margin-top:12px;">
@@ -267,21 +311,31 @@
             <button data-action="reject" class="danger">拒绝</button>
           </div>
         `;
+
         const approveBtn = card.querySelector('[data-action="approve"]');
         const rejectBtn = card.querySelector('[data-action="reject"]');
+        const durationValueInput = card.querySelector('[data-role="duration-value"]');
+        const durationUnitSelect = card.querySelector('[data-role="duration-unit"]');
+        const maxUsesInput = card.querySelector('[data-role="max-uses"]');
+
         approveBtn.disabled = !reviewAllowed;
         rejectBtn.disabled = !reviewAllowed;
+        durationValueInput.disabled = !reviewAllowed;
+        durationUnitSelect.disabled = !reviewAllowed;
+        maxUsesInput.disabled = !reviewAllowed;
+
         approveBtn.addEventListener("click", async () => {
-          const durationValue = Math.max(1, Number(card.querySelector('[data-role="duration-value"]').value) || 30);
-          const durationUnit = card.querySelector('[data-role="duration-unit"]').value === "hours" ? "hours" : "minutes";
-          const maxUses = Math.max(1, Number(card.querySelector('[data-role="max-uses"]').value) || 1);
           try {
+            const durationValue = Math.max(1, Number(durationValueInput.value) || 30);
+            const durationUnit = durationUnitSelect.value === "hours" ? "hours" : "minutes";
+            const maxUses = Math.max(1, Number(maxUsesInput.value) || 1);
             await approveRequest(reqId, req, durationValue, durationUnit, maxUses);
           } catch (error) {
             console.error(error);
             log(`批准申请 ${reqId} 失败。`, "err");
           }
         });
+
         rejectBtn.addEventListener("click", async () => {
           try {
             await rejectRequest(reqId, req);
@@ -290,6 +344,7 @@
             log(`拒绝申请 ${reqId} 失败。`, "err");
           }
         });
+
         requestsBox.appendChild(card);
       }
     }
@@ -303,27 +358,35 @@
       for (const [reqId, req] of entries) {
         const card = document.createElement("div");
         card.className = "request";
-        const status = req.status || "unknown";
-        const resultText = req.result?.type ? `${req.result.type}${req.result?.expiresAt ? `，到期：${fmtTime(req.result.expiresAt)}` : ""}` : "-";
         card.innerHTML = `
-          <div class="pill ${statusClass(status)}">${escapeHtml(status)}</div>
+          <div class="pill ${statusClass(req.status || "pending")}">${escapeHtml(req.status || "pending")}</div>
           <h4>${escapeHtml(req.name || "未命名申请")}</h4>
-          <div class="meta">联系方式：${escapeHtml(req.contact || "-")}<br>来访原因：${escapeHtml(req.reason || "-")}<br>备注：${escapeHtml(req.note || "-")}<br>提交时间：${fmtTime(req.createdAt)}<br>批准时间：${fmtTime(req.approvedAt)}<br>拒绝时间：${fmtTime(req.rejectedAt)}<br>grantToken：${escapeHtml(req.grantToken || "-")}<br>处理结果：${escapeHtml(resultText)}</div>
+          <div class="meta">
+            联系方式：${escapeHtml(req.contact || "-")}<br>
+            来访原因：${escapeHtml(req.reason || "-")}<br>
+            备注：${escapeHtml(req.note || "-")}<br>
+            提交时间：${fmtTime(req.createdAt)}<br>
+            批准时间：${fmtTime(req.approvedAt)}<br>
+            拒绝时间：${fmtTime(req.rejectedAt)}<br>
+            grantToken：${escapeHtml(req.grantToken || "-")}
+          </div>
           <div class="row" style="margin-top:12px;">
             <button data-action="delete" class="danger">删除记录</button>
           </div>
         `;
+
         const deleteBtn = card.querySelector('[data-action="delete"]');
         deleteBtn.disabled = !reviewAllowed;
+
         deleteBtn.addEventListener("click", async () => {
-          if (!confirm(`确定删除申请 ${reqId} 吗？相关 session / grant 也会一并删除。`)) return;
           try {
             await deleteRequest(reqId, req);
           } catch (error) {
             console.error(error);
-            log(`删除申请 ${reqId} 失败。`, "err");
+            log(`删除记录 ${reqId} 失败。`, "err");
           }
         });
+
         historyBox.appendChild(card);
       }
     }
@@ -341,27 +404,41 @@
       await signOut(auth);
     });
 
-    onValue(ref(db, "deviceState"), (snap) => renderDeviceState(snap.val()));
-
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         authInfo.textContent = "未登录。请先使用 Google 登录。";
-        mainArea.style.display = "none";
+        loginBtn.style.display = "";
         logoutBtn.style.display = "none";
-        return;
-      }
-      logoutBtn.style.display = "inline-block";
-      const meta = await loadUserMeta(user.uid);
-      const role = meta.role || "";
-      if (!canEnter(role, user)) {
-        authInfo.textContent = `当前账号 ${user.email || user.uid} 无权访问接收端。`;
         mainArea.style.display = "none";
         return;
       }
-      authInfo.textContent = `已登录：${user.email || user.uid}\n角色：${role || "未设置"}\n临时审批权限：${meta.canReviewTemporaryAccess === true ? "有" : "无"}`;
-      mainArea.style.display = "block";
+
+      const meta = await loadUserMeta(user.uid);
+      const role = meta.role || "visitor";
+
+      if (!canEnter(role, meta, user)) {
+        authInfo.textContent = `已登录：${user.email || user.uid}\n权限不足，无法进入临时访问审批后台。`;
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "";
+        mainArea.style.display = "none";
+        return;
+      }
 
       const reviewAllowed = canReview(meta, user);
+
+      authInfo.textContent =
+        `已登录：${user.email || user.uid}\n` +
+        `角色：${role || "未设置"}\n` +
+        `临时审批权限：${reviewAllowed ? "有" : "无"}`;
+
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "";
+      mainArea.style.display = "";
+
+      onValue(ref(db, "deviceState"), (snapshot) => {
+        renderDeviceState(snapshot.val() || {});
+      });
+
       onValue(ref(db, "temporaryAccessRequests"), (snap) => {
         const all = Object.entries(snap.val() || {});
         all.sort((a, b) => ((b[1]?.createdAt || 0) - (a[1]?.createdAt || 0)));
@@ -369,6 +446,9 @@
         const handled = all.filter(([, v]) => (v?.status || "pending") !== "pending");
         renderPendingRequests(pending, reviewAllowed);
         renderHistory(handled, reviewAllowed);
+      }, (error) => {
+        console.error(error);
+        log("监听临时访问申请失败。", "err");
       });
     });
   </script>
