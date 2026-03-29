@@ -151,7 +151,11 @@
     }
 
     function canReview(meta, user) {
-      return !!user && (user.uid === ADMIN_UID || meta.canReviewPaidAccess === true);
+      return !!user && (
+        user.uid === ADMIN_UID ||
+        meta.role === "admin" ||
+        meta.canReviewPaidAccess === true
+      );
     }
 
     async function approveRequest(reqId, req) {
@@ -248,7 +252,7 @@
       if (uid) {
         const userAccessSnap = await get(ref(db, `userAccess/${uid}`));
         const userAccess = userAccessSnap.val() || null;
-
+      
         if (!grantId || (userAccess && userAccess.paidGrantId === grantId)) {
           updates[`userAccess/${uid}`] = {
             membershipActive: false,
@@ -257,6 +261,11 @@
             paidUntil: 0,
             residentPending: false
           };
+        }
+      
+        if (req.type === "resident_join") {
+          updates[`users/${uid}/role`] = "visitor";
+          updates[`users/${uid}/canReviewTemporaryAccess`] = false;
         }
       }
 
