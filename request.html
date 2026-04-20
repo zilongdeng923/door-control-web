@@ -105,7 +105,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import { getDatabase, ref, push, set, onValue, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -131,7 +131,7 @@
     const statusText = document.getElementById("statusText");
     const statusIcon = document.getElementById("statusIcon");
 
-    let sessionUnsubscribe = null;
+    let sessionPollTimer = null;
     let redirectInFlight = false;
 
     function setStatus(message, type = "muted") {
@@ -202,44 +202,65 @@
       }
     }
 
-    function listenSession(token) {
-      if (!token) return;
-      if (sessionUnsubscribe) sessionUnsubscribe();
+function stopSessionPolling() {
+  if (sessionPollTimer) {
+    clearInterval(sessionPollTimer);
+    sessionPollTimer = null;
+  }
+}
 
-      const sessionRef = ref(db, `temporaryRequestSessions/${token}`);
-      sessionUnsubscribe = onValue(sessionRef, (snapshot) => {
-        const data = snapshot.val();
-        if (!data) {
-          clearSessionToken();
-          setStatus("未找到已保存的申请会话。", "muted");
-          return;
-        }
+async function pollSession(token) {
+  if (!token) return;
 
-        const status = data.status || "pending";
-        if (status === "pending") {
-          redirectInFlight = false;
-          setStatus("申请已提交，正在等待住户审核。", "warn");
-          return;
-        }
+  try {
+    const sessionRef = ref(db, `temporaryRequestSessions/${token}`);
+    const snapshot = await get(sessionRef);
+    const data = snapshot.val();
 
-        if (status === "rejected") {
-          clearSessionToken();
-          redirectInFlight = false;
-          setStatus("申请已被拒绝。", "err");
-          return;
-        }
-
-        if (status === "approved" && data.grantToken) {
-          checkGrantAndMaybeRedirect(data.grantToken);
-          return;
-        }
-
-        setStatus(`当前状态：${status}`, "muted");
-      }, (error) => {
-        console.error(error);
-        setStatus("监听申请状态失败。", "err");
-      });
+    if (!data) {
+      stopSessionPolling();
+      clearSessionToken();
+      setStatus("未找到已保存的申请会话。", "muted");
+      return;
     }
+
+    const status = data.status || "pending";
+    if (status === "pending") {
+      redirectInFlight = false;
+      setStatus("申请已提交，正在等待住户审核。", "warn");
+      return;
+    }
+
+    if (status === "rejected") {
+      stopSessionPolling();
+      clearSessionToken();
+      redirectInFlight = false;
+      setStatus("申请已被拒绝。", "err");
+      return;
+    }
+
+    if (status === "approved" && data.grantToken) {
+      stopSessionPolling();
+      checkGrantAndMaybeRedirect(data.grantToken);
+      return;
+    }
+
+    setStatus(`当前状态：${status}`, "muted");
+  } catch (error) {
+    console.error(error);
+    setStatus("读取申请状态失败。", "err");
+  }
+}
+
+function listenSession(token) {
+  if (!token) return;
+  stopSessionPolling();
+  pollSession(token);
+  sessionPollTimer = setInterval(() => {
+    if (document.hidden) return;
+    pollSession(token);
+  }, 5000);
+}
 
     requestForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -314,6 +335,14 @@
       setStatus("检测到上一次申请记录，正在恢复状态…", "muted");
       listenSession(existingToken);
     }
+
+    window.addEventListener("beforeunload", stopSessionPolling);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        const token = getStoredSessionToken();
+        if (token) pollSession(token);
+      }
+    });
   </script>
 </body>
 </html>

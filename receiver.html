@@ -98,7 +98,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, update, onValue, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -435,21 +435,40 @@
       logoutBtn.style.display = "";
       mainArea.style.display = "";
 
-      onValue(ref(db, "deviceState"), (snapshot) => {
-        renderDeviceState(snapshot.val() || {});
-      });
+onValue(ref(db, "deviceState"), (snapshot) => {
+  renderDeviceState(snapshot.val() || {});
+});
 
-      onValue(ref(db, "temporaryAccessRequests"), (snap) => {
-        const all = Object.entries(snap.val() || {});
-        all.sort((a, b) => ((b[1]?.createdAt || 0) - (a[1]?.createdAt || 0)));
-        const pending = all.filter(([, v]) => (v?.status || "pending") === "pending");
-        const handled = all.filter(([, v]) => (v?.status || "pending") !== "pending");
-        renderPendingRequests(pending, reviewAllowed);
-        renderHistory(handled, reviewAllowed);
-      }, (error) => {
-        console.error(error);
-        log("监听临时访问申请失败。", "err");
-      });
+const pendingQuery = query(
+  ref(db, "temporaryAccessRequests"),
+  orderByChild("status"),
+  equalTo("pending")
+);
+
+onValue(pendingQuery, (snap) => {
+  const pending = Object.entries(snap.val() || {})
+    .sort((a, b) => ((b[1]?.createdAt || 0) - (a[1]?.createdAt || 0)));
+  renderPendingRequests(pending, reviewAllowed);
+}, (error) => {
+  console.error(error);
+  log("监听待审批申请失败。", "err");
+});
+
+const recentHistoryQuery = query(
+  ref(db, "temporaryAccessRequests"),
+  orderByChild("createdAt"),
+  limitToLast(20)
+);
+
+onValue(recentHistoryQuery, (snap) => {
+  const handled = Object.entries(snap.val() || {})
+    .filter(([, v]) => (v?.status || "pending") !== "pending")
+    .sort((a, b) => ((b[1]?.createdAt || 0) - (a[1]?.createdAt || 0)));
+  renderHistory(handled, reviewAllowed);
+}, (error) => {
+  console.error(error);
+  log("读取最近历史失败。", "err");
+});
     });
   </script>
 </body>

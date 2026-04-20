@@ -92,7 +92,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -119,11 +119,38 @@
       "micIdle","micActive","btnIdle","btnActive","btnPreload","btnHoldMs",
       "openAutoMicDelayMs","openPostPunchDelayMs"
     ];
+    let deviceStatePollTimer = null;
 
     function log(msg, type = "muted") {
       logBox.className = `status ${type}`;
       logBox.textContent = msg;
     }
+
+function stopDeviceStatePolling() {
+  if (deviceStatePollTimer) {
+    clearInterval(deviceStatePollTimer);
+    deviceStatePollTimer = null;
+  }
+}
+
+async function fetchDeviceState() {
+  try {
+    const snapshot = await get(ref(db, "deviceState"));
+    const s = snapshot.val() || {};
+    deviceStateBox.textContent = JSON.stringify(s, null, 2);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function startDeviceStatePolling() {
+  stopDeviceStatePolling();
+  fetchDeviceState();
+  deviceStatePollTimer = setInterval(() => {
+    if (document.hidden) return;
+    fetchDeviceState();
+  }, 15000);
+}
 
     async function loadConfig() {
       const snap = await get(ref(db, "admin/config"));
@@ -176,12 +203,13 @@
       authInfo.textContent = `已授权：admin ${user.email}`;
       mainArea.style.display = "block";
       await loadConfig();
+      startDeviceStatePolling();
     });
 
-    onValue(ref(db, "deviceState"), (snapshot) => {
-      const s = snapshot.val() || {};
-      deviceStateBox.textContent = JSON.stringify(s, null, 2);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) fetchDeviceState();
     });
+    window.addEventListener("beforeunload", stopDeviceStatePolling);
   </script>
 </body>
 </html>

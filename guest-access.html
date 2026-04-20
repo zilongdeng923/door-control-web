@@ -66,7 +66,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -95,8 +95,8 @@
     let currentGrant = null;
     let currentRequest = null;
     let timer = null;
-    let grantUnsubscribe = null;
-    let requestUnsubscribe = null;
+    let grantPollTimer = null;
+    let requestPollTimer = null;
     let grantToken = "";
 
     function storeGrantToken(token) {
@@ -216,36 +216,90 @@
       }
     }
 
-    function startGrantListener() {
-      grantToken = normalizeGrantToken();
-      if (!grantToken) {
-        renderGrant();
-        return;
-      }
+function stopGrantPolling() {
+  if (grantPollTimer) {
+    clearInterval(grantPollTimer);
+    grantPollTimer = null;
+  }
+}
 
-      if (grantUnsubscribe) grantUnsubscribe();
-      if (requestUnsubscribe) requestUnsubscribe();
+function stopRequestPolling() {
+  if (requestPollTimer) {
+    clearInterval(requestPollTimer);
+    requestPollTimer = null;
+  }
+}
 
-      grantUnsubscribe = onValue(ref(db, `temporaryAccessGrants/${grantToken}`), (snapshot) => {
-        currentGrant = snapshot.val();
-        renderGrant();
-      }, (error) => {
-        console.error(error);
-        stateText.textContent = "读取失败";
-        remainText.textContent = "无法读取授权信息。";
-        openReqBtn.disabled = true;
-      });
+async function fetchGrant() {
+  if (!grantToken) {
+    currentGrant = null;
+    renderGrant();
+    return;
+  }
 
-      requestUnsubscribe = onValue(ref(db, `guestDoorRequests/${grantToken}`), (snapshot) => {
-        currentRequest = snapshot.val();
-        renderRequestStatus();
-      }, (error) => {
-        console.error(error);
-      });
+  try {
+    const snapshot = await get(ref(db, `temporaryAccessGrants/${grantToken}`));
+    currentGrant = snapshot.val();
+    renderGrant();
+  } catch (error) {
+    console.error(error);
+    stateText.textContent = "读取失败";
+    remainText.textContent = "无法读取授权信息。";
+    openReqBtn.disabled = true;
+  }
+}
 
-      if (timer) clearInterval(timer);
-      timer = setInterval(renderGrant, 1000);
+async function fetchRequest() {
+  if (!grantToken) {
+    currentRequest = null;
+    return;
+  }
+
+  try {
+    const snapshot = await get(ref(db, `guestDoorRequests/${grantToken}`));
+    currentRequest = snapshot.val();
+    renderRequestStatus();
+
+    const status = currentRequest?.status || "";
+    if (status !== "pending" && status !== "processing") {
+      stopRequestPolling();
     }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function startRequestPolling() {
+  if (requestPollTimer) return;
+  requestPollTimer = setInterval(() => {
+    if (document.hidden) return;
+    fetchRequest();
+  }, 3000);
+}
+
+function startGrantListener() {
+  grantToken = normalizeGrantToken();
+  if (!grantToken) {
+    currentGrant = null;
+    currentRequest = null;
+    renderGrant();
+    return;
+  }
+
+  stopGrantPolling();
+  stopRequestPolling();
+
+  fetchGrant();
+  fetchRequest();
+
+  grantPollTimer = setInterval(() => {
+    if (document.hidden) return;
+    fetchGrant();
+  }, 30000);
+
+  if (timer) clearInterval(timer);
+  timer = setInterval(renderGrant, 1000);
+}
 
     openReqBtn.addEventListener("click", async () => {
       if (!grantToken || !currentGrant) return;
@@ -270,7 +324,16 @@
           message: "waiting"
         });
 
-        actionStatus.textContent = "开门请求已提交，设备正在等待处理。";
+        currentRequest = {
+          createdAt: now,
+          status: "pending",
+          processedAt: 0,
+          processorUid: "",
+          requestId: `guest_${now}`,
+          message: "waiting"
+        };
+        renderRequestStatus();
+        startRequestPolling();
       } catch (error) {
         console.error(error);
         actionStatus.textContent = "提交开门请求失败。";
@@ -283,8 +346,15 @@
 
     window.addEventListener("beforeunload", () => {
       if (timer) clearInterval(timer);
-      if (grantUnsubscribe) grantUnsubscribe();
-      if (requestUnsubscribe) requestUnsubscribe();
+      stopGrantPolling();
+      stopRequestPolling();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        fetchGrant();
+        fetchRequest();
+      }
     });
   </script>
 </body>

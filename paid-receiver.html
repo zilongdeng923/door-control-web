@@ -77,7 +77,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, get, update, onValue, query, orderByChild, equalTo, limitToLast } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -447,20 +447,51 @@
       logoutBtn.style.display = "";
       mainArea.style.display = "";
 
-      onValue(ref(db, "paidAccessRequests"), (snap) => {
-        const all = snap.val() || {};
-        const entries = Object.entries(all).sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
-        const pending = entries.filter(([, req]) => req.status === "pending");
-        const waiting = entries.filter(([, req]) => req.status === "approved_waiting_payment");
-        const history = entries.filter(([, req]) => req.status !== "pending" && req.status !== "approved_waiting_payment");
+const pendingQuery = query(
+  ref(db, "paidAccessRequests"),
+  orderByChild("status"),
+  equalTo("pending")
+);
 
-        renderPending(pending, reviewAllowed);
-        renderWaiting(waiting, reviewAllowed);
-        renderHistory(history, reviewAllowed);
-      }, (error) => {
-        console.error(error);
-        log("监听会员申请失败。", "err");
-      });
+onValue(pendingQuery, (snap) => {
+  const pending = Object.entries(snap.val() || {})
+    .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
+  renderPending(pending, reviewAllowed);
+}, (error) => {
+  console.error(error);
+  log("读取待审批申请失败。", "err");
+});
+
+const waitingQuery = query(
+  ref(db, "paidAccessRequests"),
+  orderByChild("status"),
+  equalTo("approved_waiting_payment")
+);
+
+onValue(waitingQuery, (snap) => {
+  const waiting = Object.entries(snap.val() || {})
+    .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
+  renderWaiting(waiting, reviewAllowed);
+}, (error) => {
+  console.error(error);
+  log("读取待付款确认申请失败。", "err");
+});
+
+const recentHistoryQuery = query(
+  ref(db, "paidAccessRequests"),
+  orderByChild("createdAt"),
+  limitToLast(20)
+);
+
+onValue(recentHistoryQuery, (snap) => {
+  const history = Object.entries(snap.val() || {})
+    .filter(([, req]) => req.status !== "pending" && req.status !== "approved_waiting_payment")
+    .sort((a, b) => (b[1]?.createdAt || 0) - (a[1]?.createdAt || 0));
+  renderHistory(history, reviewAllowed);
+}, (error) => {
+  console.error(error);
+  log("读取最近处理记录失败。", "err");
+});
     });
   </script>
 </body>

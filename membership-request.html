@@ -512,7 +512,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-    import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDtoDn5nsyPdX4_qzE4mEiilorBlsMg8oI",
@@ -670,70 +670,74 @@
       });
     }
 
-    function listenLatestRequest(uid) {
-      if (latestReqUnsub) latestReqUnsub();
+function listenLatestRequest(uid) {
+  if (latestReqUnsub) latestReqUnsub();
 
-      const requestsRef = ref(db, "paidAccessRequests");
-      latestReqUnsub = onValue(
-        requestsRef,
-        (snap) => {
-          const all = snap.val() || {};
-          let latest = null;
-          let latestId = "";
+  const requestsRef = query(
+    ref(db, "paidAccessRequests"),
+    orderByChild("uid"),
+    equalTo(uid)
+  );
 
-          for (const [reqId, req] of Object.entries(all)) {
-            if (req.uid !== uid) continue;
-            if (!latest || (req.createdAt || 0) > (latest.createdAt || 0)) {
-              latest = req;
-              latestId = reqId;
-            }
-          }
+  latestReqUnsub = onValue(
+    requestsRef,
+    (snap) => {
+      const all = snap.val() || {};
+      let latest = null;
+      let latestId = "";
 
-          latestRequestId = latestId;
-          hidePaymentPanel();
-
-          if (!latest) {
-            setStatus("还没有找到你的会员申请记录。", "muted");
-            return;
-          }
-
-          const amount = latest.pricing?.amountPence || 0;
-          const status = latest.status || "pending";
-          const pieces = [
-            `最新申请：${latestId}`,
-            `类型：${latest.type === "resident_join" ? "成为住户" : "普通会员"}`,
-            `金额：${penceToPounds(amount)}`,
-            `状态：${status}`
-          ];
-
-          if (status === "approved_waiting_payment") {
-            pieces.push("你的申请已经审批通过。请使用下方的银行转账或付款码完成付款。");
-            setStatus(pieces.join("\n"), "warn");
-            showPaymentPanel(amount, latest.type, latest.plan?.days || 1);
-            return;
-          }
-
-          if (status === "paid") {
-            const until = latest.result?.expiresAt ? new Date(latest.result.expiresAt).toLocaleString() : "-";
-            pieces.push(`已生效至：${until}`);
-            setStatus(pieces.join("\n"), "ok");
-            return;
-          }
-
-          if (status === "rejected") {
-            pieces.push("申请已被拒绝。");
-            setStatus(pieces.join("\n"), "err");
-            return;
-          }
-
-          setStatus(pieces.join("\n"), status === "pending" ? "warn" : "muted");
-        },
-        (error) => {
-          console.error(error);
-          setStatus("监听会员申请状态失败。", "err");
+      for (const [reqId, req] of Object.entries(all)) {
+        if (!latest || (req.createdAt || 0) > (latest.createdAt || 0)) {
+          latest = req;
+          latestId = reqId;
         }
-      );
+      }
+
+      latestRequestId = latestId;
+      hidePaymentPanel();
+
+      if (!latest) {
+        setStatus("还没有找到你的会员申请记录。", "muted");
+        return;
+      }
+
+      const amount = latest.pricing?.amountPence || 0;
+      const status = latest.status || "pending";
+      const pieces = [
+        `最新申请：${latestId}`,
+        `类型：${latest.type === "resident_join" ? "成为住户" : "普通会员"}`,
+        `金额：${penceToPounds(amount)}`,
+        `状态：${status}`
+      ];
+
+      if (status === "approved_waiting_payment") {
+        pieces.push("你的申请已经审批通过。请使用下方的银行转账或付款码完成付款。");
+        setStatus(pieces.join("\n"), "warn");
+        showPaymentPanel(amount, latest.type, latest.plan?.days || 1);
+        return;
+      }
+
+      if (status === "paid") {
+        const until = latest.result?.expiresAt ? new Date(latest.result.expiresAt).toLocaleString() : "-";
+        pieces.push(`已生效至：${until}`);
+        setStatus(pieces.join("\n"), "ok");
+        return;
+      }
+
+      if (status === "rejected") {
+        pieces.push("申请已被拒绝。");
+        setStatus(pieces.join("\n"), "err");
+        return;
+      }
+
+      setStatus(pieces.join("\n"), status === "pending" ? "warn" : "muted");
+    },
+    (error) => {
+      console.error(error);
+      setStatus("监听会员申请状态失败。", "err");
     }
+  );
+}
 
     requestType.addEventListener("change", updatePricePreview);
     daysInput.addEventListener("input", updatePricePreview);

@@ -331,8 +331,7 @@
       getDatabase,
       ref,
       get,
-      set,
-      onValue
+      set
     } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -374,6 +373,9 @@
 
     let latestDeviceState = null;
     let localBusyGuard = false;
+    let cachedRole = "";
+    let cachedUserAccess = null;
+    let deviceStatePollTimer = null;
 
     function setStatus(message, type = "muted") {
       statusText.textContent = message;
@@ -499,12 +501,38 @@
       }
     }
 
+function stopDeviceStatePolling() {
+  if (deviceStatePollTimer) {
+    clearInterval(deviceStatePollTimer);
+    deviceStatePollTimer = null;
+  }
+}
+
+async function fetchDeviceState() {
+  try {
+    const snapshot = await get(ref(db, "deviceState"));
+    latestDeviceState = snapshot.val() || {};
+    updateButtonsFromDeviceState(latestDeviceState);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function startDeviceStatePolling() {
+  stopDeviceStatePolling();
+  fetchDeviceState();
+  deviceStatePollTimer = setInterval(() => {
+    if (document.hidden) return;
+    fetchDeviceState();
+  }, 15000);
+}
+
     async function sendCommand(commandName, extra = {}) {
       const user = auth.currentUser;
       if (!user) throw new Error("not_logged_in");
 
-      const role = await loadRole(user.uid);
-      const userAccess = await loadUserAccess(user.uid);
+      const role = cachedRole || await loadRole(user.uid);
+      const userAccess = cachedUserAccess ?? await loadUserAccess(user.uid);
       const hasDoorAccess = computeDoorAccess(role, userAccess);
       if (!hasDoorAccess) throw new Error("no_door_access");
 
@@ -619,12 +647,17 @@
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        cachedRole = "";
+        cachedUserAccess = null;
+        stopDeviceStatePolling();
         setLoggedOutUI();
         return;
       }
 
       const role = await loadRole(user.uid);
       const userAccess = await loadUserAccess(user.uid);
+      cachedRole = role || "";
+      cachedUserAccess = userAccess;
 
       let canReviewTemp = false;
       let canReviewPaid = false;
@@ -653,10 +686,12 @@
       }
     });
 
-    onValue(ref(db, "deviceState"), (snapshot) => {
-      latestDeviceState = snapshot.val() || {};
-      updateButtonsFromDeviceState(latestDeviceState);
+    startDeviceStatePolling();
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) fetchDeviceState();
     });
+    window.addEventListener("beforeunload", stopDeviceStatePolling);
 
     loadAutoHangupPreference();
     syncTopActions(null, "", false, false);
